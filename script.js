@@ -353,6 +353,7 @@ function initChess(keepLoaded = false) {
       ['wr','wn','wb','wq','wk','wb','wn','wr']
     ];
     chessCurrentPlayer = 'w';
+    chessGameOver = false;
   }
 
   for (let y = 0; y < 8; y++) {
@@ -393,8 +394,9 @@ function renderChess() {
 let selected = null;
 
 function handleChessClick(x, y, cell) {
+  if (chessGameOver) return; // no play after checkmate/stalemate until reset
   const piece = chessBoard[y][x];
-  
+
   if (selected) {
     const [sx, sy] = selected;
     if (isValidChessMove(sx, sy, x, y)) {
@@ -402,6 +404,11 @@ function handleChessClick(x, y, cell) {
       const movedPiece = chessBoard[sy][sx];
       chessBoard[y][x] = movedPiece;
       chessBoard[sy][sx] = '';
+      // Promotion: a pawn reaching the last rank becomes a queen
+      if (movedPiece[1] === 'p' && (y === 0 || y === 7)) {
+        chessBoard[y][x] = movedPiece[0] + 'q';
+        gameLog.push({mode: 'chess', action: 'promote', to: 'q', by: movedPiece[0]});
+      }
       const isCapture = !!target;
       gameLog.push({mode: 'chess', from: [sx,sy], to: [x,y], capture: isCapture ? target : null});
       if (isCapture) {
@@ -410,6 +417,8 @@ function handleChessClick(x, y, cell) {
       chessCurrentPlayer = chessCurrentPlayer === 'w' ? 'b' : 'w';
       selected = null;
       renderChess();
+      // Real game-state judgment for the side now to move
+      if (evaluateChessEnd()) { updateStreakOnPlay(); autoSave(); return; }
       updateStatus();
       updateStreakOnPlay();
       autoSave();
@@ -446,22 +455,24 @@ function handleChessClick(x, y, cell) {
   }
 }
 
-// Path must be empty between source and target (exclusive) for sliding pieces.
-// Fixes real correctness bug: rook/bishop/queen could jump over occupied squares.
-function isPathClear(sx, sy, tx, ty) {
+// Path must be empty between source and target (exclusive) for sliding pieces,
+// on the given board. Fixes real bug: rook/bishop/queen jumping over pieces.
+function isPathClear(board, sx, sy, tx, ty) {
   const stepX = Math.sign(tx - sx);
   const stepY = Math.sign(ty - sy);
   let cx = sx + stepX, cy = sy + stepY;
   while (cx !== tx || cy !== ty) {
-    if (chessBoard[cy][cx]) return false;
+    if (board[cy][cx]) return false;
     cx += stepX; cy += stepY;
   }
   return true;
 }
 
-function isValidChessMove(sx, sy, tx, ty) {
-  const piece = chessBoard[sy][sx];
-  const target = chessBoard[ty][tx];
+// Pseudo-legal: correct piece geometry + blocking, but ignores whether the
+// move leaves your own king in check (that final filter lives in isLegalChessMove).
+function isPseudoLegal(board, sx, sy, tx, ty) {
+  const piece = board[sy][sx];
+  const target = board[ty][tx];
   if (!piece) return false;
   if (sx === tx && sy === ty) return false; // no null move
   if (target && target[0] === piece[0]) return false;
@@ -476,61 +487,221 @@ function isValidChessMove(sx, sy, tx, ty) {
     if (tx === sx && ty === sy + dir && !target) return true;
     // double push from start row — intermediate square must also be empty
     if (tx === sx && sy === (piece[0]==='w'?6:1) && ty === sy + 2*dir
-        && !target && !chessBoard[sy + dir][sx]) return true;
-    // diagonal capture
+        && !target && !board[sy + dir][sx]) return true;
+    // diagonal capture (must land on an enemy piece)
     if (dx === 1 && ty === sy + dir && target) return true;
     return false;
   }
-  if (type === 'r' || type === 'q') if ((dx === 0 || dy === 0) && isPathClear(sx, sy, tx, ty)) return true; // straight
-  if (type === 'b' || type === 'q') if (dx === dy && isPathClear(sx, sy, tx, ty)) return true; // diagonal
+  if (type === 'r' || type === 'q') if ((dx === 0 || dy === 0) && isPathClear(board, sx, sy, tx, ty)) return true; // straight
+  if (type === 'b' || type === 'q') if (dx === dy && isPathClear(board, sx, sy, tx, ty)) return true; // diagonal
   if (type === 'n') if ((dx === 1 && dy === 2) || (dx === 2 && dy === 1)) return true;
   if (type === 'k') if (dx <= 1 && dy <= 1) return true;
 
   return false;
 }
 
-// Enhanced AI: capture priority + basic material lookahead (simple 1-ply)
-const PIECE_VALUES = { 'p':1, 'n':3, 'b':3, 'r':5, 'q':9, 'k':100 };
+// Full legality on the LIVE board for the side to move (player-facing).
+// Enforces check rules: you cannot make a move that leaves your king attacked.
+function isValidChessMove(sx, sy, tx, ty) {
+  const piece = chessBoard[sy][sx];
+  if (!piece) return false;
+  return isLegalChessMove(chessBoard, sx, sy, tx, ty, piece[0]);
+}
 
-function aiChessMove() {
-  if (chessCurrentPlayer !== 'b' || puzzleActive) return;
-  const allMoves = [];
-  for (let y=0; y<8; y++) for (let x=0; x<8; x++) {
-    if (chessBoard[y][x] && chessBoard[y][x][0]==='b') {
-      for (let ty=0; ty<8; ty++) for (let tx=0; tx<8; tx++) {
-        if (isValidChessMove(x,y,tx,ty)) {
-          const tgt = chessBoard[ty][tx];
-          const val = tgt ? (PIECE_VALUES[tgt[1]] || 1) : 0;
-          allMoves.push({sx:x, sy:y, tx, ty, captureVal: val, isCapture: !!tgt});
+// ============================================================
+// REAL CHESS RULES ENGINE — check / checkmate / stalemate
+// Pure functions operate on an 8x8 board (array of rows). No globals mutated
+// except where noted, so the AI can search hypothetical positions safely.
+// ============================================================
+let chessGameOver = false; // set when checkmate/stalemate reached
+
+// Locate a king of a given color ('w'|'b') on a board. Returns [x,y] or null.
+function findKing(board, color) {
+  const k = color + 'k';
+  for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) {
+    if (board[y][x] === k) return [x, y];
+  }
+  return null;
+}
+
+// Geometric attack test: can `attacker` color hit square (tx,ty)?
+// Independent of whose turn it is and of check legality (pure geometry),
+// so it is safe to use inside legal-move generation without recursion.
+function isSquareAttacked(board, tx, ty, attacker) {
+  const dir = attacker === 'w' ? -1 : 1; // pawns move toward decreasing y for white
+  // Pawn attacks: a white pawn on (px,py) attacks (px±1, py-1)
+  for (const dx of [-1, 1]) {
+    const px = tx + dx, py = ty - dir; // the square a pawn would sit on to attack (tx,ty)
+    if (px >= 0 && px < 8 && py >= 0 && py < 8) {
+      const p = board[py][px];
+      if (p && p[0] === attacker && p[1] === 'p') return true;
+    }
+  }
+  // Knight attacks
+  const kn = [[1,2],[2,1],[-1,2],[-2,1],[1,-2],[2,-1],[-1,-2],[-2,-1]];
+  for (const [dx, dy] of kn) {
+    const px = tx + dx, py = ty + dy;
+    if (px >= 0 && px < 8 && py >= 0 && py < 8) {
+      const p = board[py][px];
+      if (p && p[0] === attacker && p[1] === 'n') return true;
+    }
+  }
+  // King adjacency
+  for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) {
+    if (!dx && !dy) continue;
+    const px = tx + dx, py = ty + dy;
+    if (px >= 0 && px < 8 && py >= 0 && py < 8) {
+      const p = board[py][px];
+      if (p && p[0] === attacker && p[1] === 'k') return true;
+    }
+  }
+  // Sliding pieces: rook/queen orthogonal, bishop/queen diagonal
+  const ortho = [[1,0],[-1,0],[0,1],[0,-1]];
+  const diag = [[1,1],[1,-1],[-1,1],[-1,-1]];
+  const scan = (dirs, types) => {
+    for (const [dx, dy] of dirs) {
+      let px = tx + dx, py = ty + dy;
+      while (px >= 0 && px < 8 && py >= 0 && py < 8) {
+        const p = board[py][px];
+        if (p) {
+          if (p[0] === attacker && types.includes(p[1])) return true;
+          break; // blocked by any piece
         }
+        px += dx; py += dy;
+      }
+    }
+    return false;
+  };
+  if (scan(ortho, ['r', 'q'])) return true;
+  if (scan(diag, ['b', 'q'])) return true;
+  return false;
+}
+
+// Is `color`'s king currently in check on `board`?
+function isInCheck(board, color) {
+  const kp = findKing(board, color);
+  if (!kp) return false;
+  return isSquareAttacked(board, kp[0], kp[1], color === 'w' ? 'b' : 'w');
+}
+
+// Apply a pseudo-legal move on a COPY and return the resulting board.
+function applyMoveCopy(board, sx, sy, tx, ty) {
+  const nb = board.map(row => row.slice());
+  const piece = nb[sy][sx];
+  nb[ty][tx] = piece;
+  nb[sy][sx] = '';
+  // Auto-queen promotion on last rank (keeps engine honest about material)
+  if (piece && piece[1] === 'p' && (ty === 0 || ty === 7)) nb[ty][tx] = piece[0] + 'q';
+  return nb;
+}
+
+// A move is fully legal iff it is pseudo-legal AND does not leave own king in check.
+function isLegalChessMove(board, sx, sy, tx, ty, color) {
+  const piece = board[sy][sx];
+  if (!piece || piece[0] !== color) return false;
+  if (!isPseudoLegal(board, sx, sy, tx, ty)) return false;
+  const nb = applyMoveCopy(board, sx, sy, tx, ty);
+  return !isInCheck(nb, color);
+}
+
+// Generate every fully-legal move for `color` on `board`.
+function generateLegalMoves(board, color) {
+  const moves = [];
+  for (let sy = 0; sy < 8; sy++) for (let sx = 0; sx < 8; sx++) {
+    const p = board[sy][sx];
+    if (!p || p[0] !== color) continue;
+    for (let ty = 0; ty < 8; ty++) for (let tx = 0; tx < 8; tx++) {
+      if (isLegalChessMove(board, sx, sy, tx, ty, color)) {
+        moves.push({ sx, sy, tx, ty, capture: board[ty][tx] || null });
       }
     }
   }
-  if (allMoves.length === 0) return;
+  return moves;
+}
 
-  // Priority: captures first (highest value), fallback to any (near random but capture bias)
-  let candidates = allMoves.filter(m => m.isCapture).sort((a,b) => b.captureVal - a.captureVal);
-  if (candidates.length === 0) candidates = allMoves;
+// Post-move status. Returns 'checkmate' | 'stalemate' | 'check' | 'normal'
+function chessPositionStatus(board, colorToMove) {
+  const hasMove = generateLegalMoves(board, colorToMove).length > 0;
+  const inCheck = isInCheck(board, colorToMove);
+  if (!hasMove) return inCheck ? 'checkmate' : 'stalemate';
+  return inCheck ? 'check' : 'normal';
+}
 
-  // Real chessBuff from Go: if power, strongly prefer high value captures + variable near-miss bonus
-  if (fusionBuff.chessPower > 0 && candidates.length > 0) {
-    // Legion flavor: variable (sometimes "near miss" less boost)
-    const boost = (Math.random() < 0.75) ? fusionBuff.chessPower : Math.max(1, fusionBuff.chessPower - 1);
-    candidates = candidates.slice(0, Math.max(1, Math.floor(candidates.length * (0.6 + boost * 0.1))));
-    fusionBuff.chessPower = Math.max(0, fusionBuff.chessPower - 1); // consume buff on powerful play
+// Enhanced AI: capture priority + basic material lookahead (simple 1-ply)
+const PIECE_VALUES = { 'p':1, 'n':3, 'b':3, 'r':5, 'q':9, 'k':100 };
+
+// Static material evaluation from black's perspective (AI is black).
+// Higher = better for black. Used for real 1-ply lookahead that avoids blunders.
+function evalMaterialForBlack(board) {
+  let score = 0;
+  for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) {
+    const p = board[y][x];
+    if (!p) continue;
+    const v = PIECE_VALUES[p[1]] || 0;
+    score += (p[0] === 'b') ? v : -v;
+    // slight central control bonus for non-king pieces
+    if (p[1] !== 'k') {
+      const centerBonus = (3.5 - Math.abs(3.5 - x)) + (3.5 - Math.abs(3.5 - y));
+      score += (p[0] === 'b' ? 1 : -1) * centerBonus * 0.05;
+    }
+  }
+  return score;
+}
+
+// Best static reply value for `color` on `board` (used to detect if our move
+// hangs the moved piece / allows a big recapture). Returns max capture value.
+function bestCaptureValue(board, color) {
+  const moves = generateLegalMoves(board, color);
+  let best = 0;
+  for (const m of moves) {
+    const t = board[m.ty][m.tx];
+    if (t) best = Math.max(best, PIECE_VALUES[t[1]] || 0);
+  }
+  return best;
+}
+
+function aiChessMove() {
+  if (chessCurrentPlayer !== 'b' || puzzleActive || chessGameOver) return;
+
+  // Only fully-legal moves (respects check pins/escapes). No illegal blunders.
+  const legal = generateLegalMoves(chessBoard, 'b');
+  if (legal.length === 0) { evaluateChessEnd(); return; }
+
+  // Real 1-ply lookahead with opponent recapture awareness (no more piece hanging):
+  // score = resulting material for black MINUS white's best immediate recapture.
+  let scored = legal.map(m => {
+    const nb = applyMoveCopy(chessBoard, m.sx, m.sy, m.tx, m.ty);
+    let s = evalMaterialForBlack(nb);
+    // Penalize by white's best reply capture (opponent will grab hanging material)
+    s -= bestCaptureValue(nb, 'w') * 0.9;
+    // Bonus if this move gives check (pressure)
+    if (isInCheck(nb, 'w')) s += 0.6;
+    return { ...m, score: s };
+  });
+
+  // Fusion buff from Go territory sharpens play: bias toward the very best lines.
+  if (fusionBuff.chessPower > 0) {
+    scored.forEach(m => { if (m.capture) m.score += Math.min(2, fusionBuff.chessPower * 0.4); });
+    fusionBuff.chessPower = Math.max(0, fusionBuff.chessPower - 1); // consume buff
   }
 
-  // Light minimax 1-ply (capture priority + material + buffed threat bias)
-  candidates.sort((a,b) => (b.captureVal + (b.isCapture ? 3 : 0)) - (a.captureVal + (a.isCapture ? 3 : 0)));
-  const chosen = candidates[0] || candidates[Math.floor(Math.random() * Math.min(4, candidates.length))];
-  const {sx, sy, tx, ty} = chosen;
+  scored.sort((a, b) => b.score - a.score);
+  // Pick among the best-scoring moves (tiny variety, but never a blunder)
+  const top = scored.filter(m => m.score >= scored[0].score - 0.25);
+  const chosen = top[Math.floor(Math.random() * top.length)];
+
+  const { sx, sy, tx, ty } = chosen;
   const target = chessBoard[ty][tx];
-  chessBoard[ty][tx] = chessBoard[sy][sx];
+  const moved = chessBoard[sy][sx];
+  chessBoard[ty][tx] = moved;
   chessBoard[sy][sx] = '';
+  if (moved[1] === 'p' && (ty === 0 || ty === 7)) chessBoard[ty][tx] = 'bq'; // AI promotes
   if (target) gameLog.push({mode: 'chess', action: 'capture', piece: target, by: 'b'});
   gameLog.push({mode: 'chess', from: [sx,sy], to: [tx,ty], capture: !!target, ai: true});
   chessCurrentPlayer = 'w';
   renderChess();
+  // Judge whether the AI just delivered mate / stalemate to the human
+  if (evaluateChessEnd()) { autoSave(); return; }
   updateStatus();
   autoSave();
   // live cross if fusion visible
@@ -538,7 +709,41 @@ function aiChessMove() {
   updateFusionBuffsUI();
 }
 
+// Central end-of-game judge. Reads the side now to move, announces
+// check / checkmate / stalemate. Returns true if the game ended.
+function evaluateChessEnd() {
+  const toMove = chessCurrentPlayer;
+  const status = chessPositionStatus(chessBoard, toMove);
+  const sideKo = toMove === 'w' ? '백' : '흑';
+  const winnerKo = toMove === 'w' ? '흑' : '백';
+  if (status === 'checkmate') {
+    chessGameOver = true;
+    gameLog.push({mode: 'chess', action: 'checkmate', loser: toMove, winner: toMove === 'w' ? 'b' : 'w', ts: Date.now()});
+    updateStatus(`체크메이트! ${winnerKo} 승리 — ${sideKo} 킹이 잡혔습니다. (초기화로 재시작)`);
+    autoSave();
+    setTimeout(() => alert(`♚ 체크메이트! ${winnerKo}의 승리입니다.\n${sideKo}은(는) 킹을 지킬 합법 수가 없습니다.\n초기화 버튼으로 새 게임을 시작하세요.`), 80);
+    setTimeout(endGameAndStudy, 400);
+    return true;
+  }
+  if (status === 'stalemate') {
+    chessGameOver = true;
+    gameLog.push({mode: 'chess', action: 'stalemate', side: toMove, ts: Date.now()});
+    updateStatus(`스테일메이트 — 무승부. ${sideKo}은(는) 체크가 아니지만 둘 수가 없습니다.`);
+    autoSave();
+    setTimeout(() => alert(`½ 스테일메이트 (무승부).\n${sideKo}은(는) 체크 상태는 아니지만 합법적인 수가 하나도 없습니다.`), 80);
+    setTimeout(endGameAndStudy, 400);
+    return true;
+  }
+  if (status === 'check') {
+    updateStatus(`체크! ${sideKo} 킹이 공격받고 있습니다 — 반드시 방어하세요. (${sideKo} 턴)`);
+    return false;
+  }
+  return false;
+}
+
 function resetChess() {
+  chessBoard = []; // force fresh starting position
+  chessGameOver = false;
   initChess();
   fusionBuff.chessPower = 0;
   puzzleActive = false;
