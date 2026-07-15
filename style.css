@@ -124,22 +124,22 @@ header h1 {
 
 /* --- Go board with traditional star points (화점) — the one novel touch --- */
 .go-grid {
+  /* 1fr tracks + capped square board => never overflows small screens */
   display: grid;
-  grid-template-columns: repeat(19, 28px);
-  grid-template-rows: repeat(19, 28px);
+  grid-template-columns: repeat(19, 1fr);
+  grid-template-rows: repeat(19, 1fr);
   gap: 1px;
   background: var(--wood-dark);
   padding: var(--s3);
   border: 6px solid #2a1c0e;
   border-radius: 4px;
-  width: fit-content;
+  width: min(100%, 532px);
+  aspect-ratio: 1 / 1;
   margin: 0 auto;
   box-shadow: 0 8px 28px rgba(0,0,0,0.4);
 }
 
 .go-grid .cell {
-  width: 28px;
-  height: 28px;
   background: var(--wood);
   position: relative;
   cursor: pointer;
@@ -160,8 +160,8 @@ header h1 {
 
 .go-grid .stone {
   position: absolute;
-  top: 2px; left: 2px;
-  width: 24px; height: 24px;
+  top: 7%; left: 7%;
+  width: 86%; height: 86%;
   border-radius: 50%;
   box-shadow: 0 2px 5px rgba(0,0,0,0.55);
   animation: drop 140ms ease-out;
@@ -173,10 +173,11 @@ header h1 {
 /* --- Chess board --- */
 .chess-grid {
   display: grid;
-  grid-template-columns: repeat(8, 52px);
-  grid-template-rows: repeat(8, 52px);
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(8, 1fr);
   gap: 0;
-  width: fit-content;
+  width: min(100%, 416px);
+  aspect-ratio: 1 / 1;
   margin: 0 auto;
   border: 6px solid var(--wood-dark);
   border-radius: 4px;
@@ -185,9 +186,8 @@ header h1 {
 }
 
 .chess-grid .cell {
-  width: 52px; height: 52px;
   display: flex; align-items: center; justify-content: center;
-  font-size: 32px;
+  font-size: clamp(22px, 7vw, 32px);
   cursor: pointer;
   user-select: none;
   transition: box-shadow 140ms ease-out, background 120ms ease-out;

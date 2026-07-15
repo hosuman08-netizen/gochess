@@ -185,7 +185,7 @@ function updateStatus(text) {
 function initGo() {
   const grid = document.getElementById('go-grid');
   grid.innerHTML = '';
-  grid.style.gridTemplateColumns = `repeat(19, 28px)`;
+  grid.style.gridTemplateColumns = `repeat(19, 1fr)`;
 
   // Traditional 19x19 star points (화점 / hoshi): the one deliberate elegant touch
   const STAR = new Set([3,9,15].flatMap(sx => [3,9,15].map(sy => sx + ',' + sy)));
@@ -402,7 +402,7 @@ const PIECE_SYMBOLS = {
 function initChess(keepLoaded = false) {
   const grid = document.getElementById('chess-grid');
   grid.innerHTML = '';
-  grid.style.gridTemplateColumns = `repeat(8, 52px)`;
+  grid.style.gridTemplateColumns = `repeat(8, 1fr)`;
 
   if (!keepLoaded || !chessBoard || chessBoard.length !== 8) {
     chessBoard = [
@@ -1357,5 +1357,5 @@ window.onload = () => {
   updateStatus(hadSave ? 'GoChess 이어하기 (기록 복원됨)' : 'GoChess 시작 • 첫 플레이');
   renderStreak();
   updateFusionBuffsUI(); // always init Legion buffs display
-  console.log('%c[Legion] p4 GoChess 로드. ALWAYS LEARNING + persistence + streak. Edge cases handled.', 'color:#4a9eff');
+  console.log('%c[GoChess] 로드 완료.', 'color:#4a9eff');
 };
