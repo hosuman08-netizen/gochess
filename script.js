@@ -444,10 +444,24 @@ function handleChessClick(x, y, cell) {
   }
 }
 
+// Path must be empty between source and target (exclusive) for sliding pieces.
+// Fixes real correctness bug: rook/bishop/queen could jump over occupied squares.
+function isPathClear(sx, sy, tx, ty) {
+  const stepX = Math.sign(tx - sx);
+  const stepY = Math.sign(ty - sy);
+  let cx = sx + stepX, cy = sy + stepY;
+  while (cx !== tx || cy !== ty) {
+    if (chessBoard[cy][cx]) return false;
+    cx += stepX; cy += stepY;
+  }
+  return true;
+}
+
 function isValidChessMove(sx, sy, tx, ty) {
   const piece = chessBoard[sy][sx];
   const target = chessBoard[ty][tx];
   if (!piece) return false;
+  if (sx === tx && sy === ty) return false; // no null move
   if (target && target[0] === piece[0]) return false;
 
   const dx = Math.abs(tx - sx);
@@ -456,12 +470,17 @@ function isValidChessMove(sx, sy, tx, ty) {
   const dir = piece[0] === 'w' ? -1 : 1;
 
   if (type === 'p') {
+    // single push
     if (tx === sx && ty === sy + dir && !target) return true;
-    if (tx === sx && sy === (piece[0]==='w'?6:1) && ty === sy + 2*dir && !target) return true;
+    // double push from start row — intermediate square must also be empty
+    if (tx === sx && sy === (piece[0]==='w'?6:1) && ty === sy + 2*dir
+        && !target && !chessBoard[sy + dir][sx]) return true;
+    // diagonal capture
     if (dx === 1 && ty === sy + dir && target) return true;
+    return false;
   }
-  if (type === 'r' || type === 'q') if (dx === 0 || dy === 0) return true; // rook or queen straight
-  if (type === 'b' || type === 'q') if (dx === dy) return true; // bishop or queen diag
+  if (type === 'r' || type === 'q') if ((dx === 0 || dy === 0) && isPathClear(sx, sy, tx, ty)) return true; // straight
+  if (type === 'b' || type === 'q') if (dx === dy && isPathClear(sx, sy, tx, ty)) return true; // diagonal
   if (type === 'n') if ((dx === 1 && dy === 2) || (dx === 2 && dy === 1)) return true;
   if (type === 'k') if (dx <= 1 && dy <= 1) return true;
 
