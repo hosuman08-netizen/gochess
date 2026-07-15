@@ -299,6 +299,63 @@ function dfsGo(x, y, color, visited, group, liberties) {
   }
 }
 
+// ============================================================
+// REAL GO SCORING — area scoring (Chinese rules): stones + territory.
+// An empty region is territory for a color only if EVERY stone bordering
+// the region is that color. Regions touching both colors (or no stones)
+// are neutral (dame) and score for neither. This is genuine board judgment,
+// not a stone count.
+// ============================================================
+function scoreGoTerritory() {
+  const N = 19;
+  const visited = Array(N).fill().map(() => Array(N).fill(false));
+  let blackTerritory = 0, whiteTerritory = 0, neutral = 0;
+
+  for (let y = 0; y < N; y++) {
+    for (let x = 0; x < N; x++) {
+      if (goBoard[y][x] !== 0 || visited[y][x]) continue;
+      // Flood-fill this empty region, collecting its size and bordering colors.
+      const region = [];
+      const borders = new Set();
+      const stack = [[x, y]];
+      visited[y][x] = true;
+      while (stack.length) {
+        const [cx, cy] = stack.pop();
+        region.push([cx, cy]);
+        for (const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+          const nx = cx + dx, ny = cy + dy;
+          if (nx < 0 || nx >= N || ny < 0 || ny >= N) continue;
+          const v = goBoard[ny][nx];
+          if (v === 0) {
+            if (!visited[ny][nx]) { visited[ny][nx] = true; stack.push([nx, ny]); }
+          } else {
+            borders.add(v); // 1 = black, 2 = white
+          }
+        }
+      }
+      if (borders.size === 1) {
+        if (borders.has(1)) blackTerritory += region.length;
+        else whiteTerritory += region.length;
+      } else {
+        neutral += region.length; // dame or open board
+      }
+    }
+  }
+
+  const blackStones = countStonesForColor(1);
+  const whiteStones = countStonesForColor(2);
+  // Chinese/area scoring: stones on board + surrounded territory.
+  const blackArea = blackStones + blackTerritory;
+  const whiteArea = whiteStones + whiteTerritory;
+  return {
+    blackStones, whiteStones, blackTerritory, whiteTerritory, neutral,
+    blackArea, whiteArea,
+    // 6.5 komi to white as a standard tiebreak (fictional-standard).
+    whiteAreaKomi: whiteArea + 6.5,
+    diff: blackArea - (whiteArea + 6.5),
+  };
+}
+
 function passGo() {
   goPassCount = (goPassCount || 0) + 1;
   goCurrentPlayer = goCurrentPlayer === 1 ? 2 : 1;
@@ -306,10 +363,17 @@ function passGo() {
   gameLog.push({mode: 'go', action: 'pass'});
   autoSave();
   if (goPassCount >= 2) {
-    // simple end + study trigger (PRD gap fix: Go scoring)
-    const score = countStonesForColor(1) - countStonesForColor(2);
-    gameLog.push({mode:'go', action:'end', score, territory: 'simple-count'});
-    alert(`Go 게임 종료 (pass 2회). 간이 점수: 흑 ${countStonesForColor(1)} - 백 ${countStonesForColor(2)} (diff ${score}). ALWAYS LEARNING 분석.`);
+    // REAL area scoring: stones + surrounded territory (not just stone count).
+    const r = scoreGoTerritory();
+    const winner = r.diff > 0 ? '흑' : (r.diff < 0 ? '백' : '무승부');
+    gameLog.push({mode:'go', action:'end', score: r.diff, scoring: 'area', detail: r});
+    alert(
+      `바둑 종료 (연속 패스 2회) — 실제 집계산 (Area scoring)\n\n` +
+      `흑: 돌 ${r.blackStones} + 집 ${r.blackTerritory} = ${r.blackArea}\n` +
+      `백: 돌 ${r.whiteStones} + 집 ${r.whiteTerritory} = ${r.whiteArea} (+덤 6.5 = ${r.whiteAreaKomi})\n` +
+      `중립(공배): ${r.neutral}\n\n` +
+      `결과: ${winner === '무승부' ? '무승부' : winner + ' 승'} (차이 ${Math.abs(r.diff).toFixed(1)}집)`
+    );
     goPassCount = 0;
     setTimeout(endGameAndStudy, 300);
   }
