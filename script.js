@@ -46,21 +46,20 @@ function feedP4Breath(deltaTension) {
   return s;
 }
 
-// Birth emergent: when high surprise + ache, "10th Glaze" (unpainted smile) insight spawns
+// 깊은 승부처에서 문득 떠오르는 통찰 메모를 생성한다
 function birthAcheBreathEmergent(context = '') {
   const s = p4Lung.lastSurprise || calcP4Surprise();
   if (s > 0.22 && p4Spore.ache > 1) {
     const glaze = {
-      type: '10th-glaze',
+      type: 'insight',
       ts: Date.now(),
       surprise: s.toFixed(3),
       ache: p4Spore.ache,
       context,
-      text: `창발: ${context}의 아픈 호흡 속에서 10번째 스모크가 스스로 피어남. (unpainted — 관찰만으로 나타남)`
+      text: `이 국면의 긴장 속에서 문득 새로운 수가 보였다. 잠시 멈추면 판이 더 넓게 보인다.`
     };
     p4VoiceEchoes.push(glaze);
-    gameLog.push({mode:'study', emergent:'10th-glaze', ...glaze});
-    console.log('%c[IGNIS p4×p6] EMERGENT BIRTH: 10th Glaze Ache-Breath Codex', 'color:#c5a46e');
+    gameLog.push({mode:'study', emergent:'insight', ...glaze});
     return glaze;
   }
   return null;
@@ -142,13 +141,13 @@ function updateStreakOnPlay() {
   renderStreak();
   // sync FOMO UI if visible
   const fomoEl = document.getElementById('fusion-fomo');
-  if (fomoEl) fomoEl.textContent = `Limited Fusion Window: ${fusionPlaysLeft} plays left (FOMO - scarcity)`;
+  if (fomoEl) fomoEl.textContent = `오늘의 퓨전 기회: ${fusionPlaysLeft}회 남음`;
   return s;
 }
 function renderStreak() {
   const s = getStreak();
   const el = document.getElementById('streak-display');
-  if (el) el.textContent = `🔥 Streak: ${s.days}일 • 오늘 ${s.count}수 (FOMO)`;
+  if (el) el.textContent = `🔥 연속 출석: ${s.days}일 • 오늘 ${s.count}수`;
 }
 
 // --- Mode Switching ---
@@ -178,7 +177,7 @@ function updateStatus(text) {
   if (text) el.textContent = text;
   else if (currentMode === 'go') el.textContent = `바둑 • ${goCurrentPlayer === 1 ? '흑' : '백'} 턴`;
   else if (currentMode === 'chess') el.textContent = `체스 • ${chessCurrentPlayer === 'w' ? '백' : '흑'} 턴`;
-  else el.textContent = `퓨전 모드 (LIVE cross-buffs • FOMO window ${fusionPlaysLeft})`;
+  else el.textContent = `퓨전 모드 (실시간 교차 버프 • 남은 기회 ${fusionPlaysLeft}회)`;
   renderStreak();
 }
 
@@ -978,28 +977,11 @@ function updateFusionBuffsUI() {
   const power = fusionBuff.chessPower || 0;
   const bonus = fusionBuff.goBonus || 0;
   if (buffsEl) {
-    buffsEl.innerHTML = `Chess→Go 보너스 대기: <b>${bonus}</b> | Go→Chess 파워: <b>${power}</b> (live cross) <span style="opacity:.6">| LungSurprise:${(p4Lung.lastSurprise||0).toFixed(2)}</span>`;
+    buffsEl.innerHTML = `체스→바둑 보너스 대기: <b>${bonus}</b> | 바둑→체스 파워: <b>${power}</b> (실시간 교차)`;
   }
   if (fomoEl) {
-    fomoEl.textContent = `Limited Fusion Window: ${fusionPlaysLeft} plays left (FOMO - scarcity)`;
+    fomoEl.textContent = `오늘의 퓨전 기회: ${fusionPlaysLeft}회 남음`;
     if (fusionPlaysLeft <= 1) fomoEl.style.color = '#ff4444';
-  }
-  // p6 Lung Surprise Eye cross viz (sfumato golden eye on fusion panel if present)
-  const fus = document.getElementById('fusion-panel');
-  if (fus && !fus.classList.contains('hidden') && window.p6LungSurpriseEye) {
-    // create tiny overlay canvas once
-    let eyeC = document.getElementById('p6-eye-canvas');
-    if (!eyeC) {
-      eyeC = document.createElement('canvas');
-      eyeC.id = 'p6-eye-canvas';
-      eyeC.width = 180; eyeC.height = 42;
-      eyeC.style.cssText = 'position:absolute;opacity:0.85;margin-left:8px;pointer-events:none;';
-      fus.appendChild(eyeC);
-    }
-    const ectx = eyeC.getContext('2d');
-    ectx.clearRect(0,0,eyeC.width,eyeC.height);
-    // feed current lung to p6 eye (Vitruvian 0.618 + sfumato)
-    window.p6LungSurpriseEye(ectx, eyeC.width, eyeC.height/2, p4Lung, (fusionBuff.chessPower||0)*0.2 + 0.6, p4Spore);
   }
 }
 
@@ -1024,7 +1006,7 @@ function simulateChessMoveForFusion() {
 function playFusionMove() {
   // FOMO limited window (Legion scarcity) — polish live
   if (fusionPlaysLeft <= 0) {
-    alert('Fusion window CLOSED (FOMO limited). Daily reset or play main modes for more scarcity leverage.');
+    alert('오늘의 퓨전 기회를 모두 사용했습니다. 내일 다시 채워지며, 바둑/체스를 플레이하면 버프를 모을 수 있어요.');
     return;
   }
   fusionPlaysLeft = Math.max(0, fusionPlaysLeft - 1);
@@ -1136,10 +1118,10 @@ function hideStudy() {
 }
 
 function recordUserInsight() {
-  const k = prompt('⚡ ALWAYS LEARNING: 이번 플레이 개인 깨달음 (강제 — Legion 업그레이드):') || '(생략)';
+  const k = prompt('⚡ 이번 플레이에서 얻은 개인 깨달음을 적어보세요:') || '(생략)';
   gameLog.push({mode:'study', userInsight: k, forced:true, ts:Date.now()});
   autoSave();
-  alert('깨달음 기록 완료. 다음 study에 반영.');
+  alert('깨달음을 기록했습니다. 다음 복기에 반영됩니다.');
   // refresh current if open
   const panel = document.getElementById('study-panel');
   if (panel && !panel.classList.contains('hidden')) showStudy(true);
@@ -1152,7 +1134,7 @@ function showFullStudyLog() {
 
 function endGameAndStudy() {
   // Legion: force post-game 2-3 insights always on end
-  updateStatus('게임 종료 — ALWAYS LEARNING 분석 중...');
+  updateStatus('게임 종료 — 복기 분석 중...');
   setTimeout(() => {
     showStudy(true);
     // auto force a learning record
@@ -1183,8 +1165,8 @@ function generatePuzzle() {
     }
     renderChess();
   }
-  updateStatus('Daily Puzzle 활성! 백 폰으로 흑 폰 포획 (c4→d5).');
-  alert('Daily Puzzle: c4 백 폰으로 d5 흑 폰 포획하세요! (FOMO streak 기회)');
+  updateStatus('오늘의 퍼즐 시작! 백 폰으로 흑 폰 포획 (c4→d5).');
+  alert('오늘의 퍼즐: c4 백 폰으로 d5 흑 폰을 포획하세요! (연속 출석 기회)');
   autoSave();
 }
 
@@ -1195,7 +1177,7 @@ function checkPuzzleSolution(from, to) {
   if (match) {
     puzzleActive = false;
     const s = getStreak();
-    alert(`✅ Puzzle Solved! +1 streak bonus. 오늘 ${s.count}수. ALWAYS LEARNING: 포획 기회 포착!`);
+    alert(`✅ 퍼즐 성공! 연속 출석 보너스 +1. 오늘 ${s.count}수. 포획 기회를 잘 포착했어요!`);
     gameLog.push({mode:'puzzle', solved: true, ts: Date.now()});
     autoSave();
     // Reset to normal play board after solve (or keep)
@@ -1215,24 +1197,13 @@ function startDailyPuzzle() {
   }, 60);
 }
 
-// Cross-Legion p3 link + mentor insight injection (ALWAYS LEARNING synergy)
+// 전략 코치 — 한 수 조언을 복기 노트에 기록
 function crossLinkP3() {
-  // Open p3 if possible (sibling), else simulate mentor
-  try {
-    const p3win = window.open('../p3-companion/index.html', '_blank');
-    if (p3win) {
-      // inject Legion cross note
-      setTimeout(() => {
-        try { p3win.focus(); } catch(e){}
-      }, 800);
-    }
-  } catch(e) {}
-  // ALWAYS inject p3-style mentor insight into current gameLog for study
-  const mentor = ['Aria Voss (p3)', 'Selene Nyx', 'Bunny Spark'][Math.floor(Math.random()*3)];
-  const insight = `${mentor} 전략 스승: "퓨전에서 한쪽을 희생해 다른쪽을 키우는 타이밍이 핵심. Variable ratio로 상대를 흔들라." (p3 cross-link)`;
-  gameLog.push({mode:'study', mentorInsight: insight, from:'p3', ts:Date.now()});
+  const coach = ['전략 코치', '노장 기사', '수읽기 도우미'][Math.floor(Math.random()*3)];
+  const insight = `${coach}: "퓨전에서는 한쪽을 내주고 다른 쪽을 키우는 타이밍이 핵심입니다. 상대의 리듬을 흔들어 주도권을 잡으세요."`;
+  gameLog.push({mode:'study', mentorInsight: insight, ts:Date.now()});
   autoSave();
-  alert('p3 AI Companion Mentor 호출됨 — 전략 스승 인사이트 gameLog + study에 기록. Cross-Legion ALWAYS LEARNING.');
+  alert('전략 코치 조언을 공부 모드에 기록했습니다.');
   // show study to surface
   setTimeout(()=> showStudy(true), 400);
 }
@@ -1243,7 +1214,7 @@ function showStudy(fromP4 = false) {
   const panel = document.getElementById('study-panel');
   const content = document.getElementById('study-content');
   if (total === 0) {
-    const msg = '아직 플레이 기록 없음. 바둑/체스/퓨전 먼저 플레이하세요.\nLegion ALWAYS LEARNING: 첫 게임 후 2-3 자동인사이트 + 강제 깨달음 기록 필수.';
+    const msg = '아직 플레이 기록이 없습니다. 바둑/체스/퓨전을 먼저 플레이하세요.\n첫 게임 후 자동 인사이트 2-3개와 개인 깨달음을 기록할 수 있어요.';
     alert(msg);
     if (content) content.textContent = msg;
     if (panel) panel.classList.remove('hidden');
@@ -1261,19 +1232,19 @@ function showStudy(fromP4 = false) {
   const aiGames = gameLog.filter(l => (l.ai || (l.mode==='chess'&&l.ai===true))).length;
 
   const insights = [];
-  insights.push(`1. 교차 전략: Go ${goMoves}수 + Chess ${chessMoves}수. Fusion ${fusionCount}회 사용. 영향력 교환(Chess→Go stones / Go→Chess power)이 핵심 레버.`);
+  insights.push(`1. 교차 전략: 바둑 ${goMoves}수 + 체스 ${chessMoves}수. 퓨전 ${fusionCount}회 사용. 영향력 교환(체스→바둑 돌 / 바둑→체스 파워)이 핵심 레버입니다.`);
   if (goCaptures + chessCaptures > 0) {
-    insights.push(`2. 포획/Variable: 총 ${goCaptures + chessCaptures} 포획 (Go ${goCaptures} / Chess ${chessCaptures}). Near-miss + scarcity로 압박 체감. AI 대국 ${aiGames}회.`);
+    insights.push(`2. 포획: 총 ${goCaptures + chessCaptures}회 (바둑 ${goCaptures} / 체스 ${chessCaptures}). 아슬아슬한 승부의 압박을 체감. 대국 ${aiGames}회.`);
   } else {
-    insights.push(`2. 포지션/영역: 포획 적음. 중앙/영토 확보 + liberty 관리 = 다음 승리 공식.`);
+    insights.push(`2. 포지션/영역: 포획이 적었습니다. 중앙·영토 확보와 활로(자유도) 관리가 다음 승리 공식입니다.`);
   }
-  insights.push(`3. Fusion + FOMO: ${fusionCount > 1 ? '퓨전 크로스 버프가 승리 가속기. 한쪽 성공 즉시 다른 보드 강화' : '퓨전 적게 씀. Limited playsLeft 적극 소모 + cross로 dominance.'} (ALWAYS LEARNING)`);
-  if (puzzlesSolved > 0) insights.push(`4. Daily Puzzle: ${puzzlesSolved}회 해결. Streak + FOMO hook 강력 작동.`);
-  // p6 cross DNA voice echo auto
+  insights.push(`3. 퓨전 활용: ${fusionCount > 1 ? '퓨전 교차 버프가 승리 가속기입니다. 한쪽에서 성공하면 즉시 다른 보드를 강화하세요.' : '퓨전을 적게 썼습니다. 남은 기회를 적극 활용해 두 보드를 연결해 보세요.'}`);
+  if (puzzlesSolved > 0) insights.push(`4. 오늘의 퍼즐: ${puzzlesSolved}회 해결. 연속 출석이 잘 이어지고 있습니다.`);
+  // 복기 노트: 상황에 맞는 한 줄 코멘트 자동 추가
   const sNow = calcP4Surprise();
   if (sNow > 0.1) {
     const v = synthesizeVoiceEcho(sNow);
-    insights.push(`p6 Voice: ${v.text}`);
+    insights.push(`복기: ${v.text}`);
     p4VoiceEchoes.push(v);
   }
   const autoBlock = insights.slice(0,3).join('\n'); // force 2-3 core
@@ -1298,19 +1269,19 @@ function showStudy(fromP4 = false) {
   // For inline we defer to button, but for direct call still prompt once
   let userKk = last && last.user ? last.user : '';
   if (!fromP4 || !userKk) {
-    userKk = prompt('⚡ ALWAYS LEARNING 강제: 개인 깨달음 1줄 기록 (Legion 자율 업그레이드)') || '(다음엔 반드시 입력)';
+    userKk = prompt('⚡ 이번 게임에서 얻은 개인 깨달음을 한 줄로 적어보세요') || '(다음엔 반드시 입력)';
     if (userKk && userKk !== '(다음엔 반드시 입력)') {
       gameLog.push({mode:'study', user: userKk, ts:Date.now()});
     }
   }
   autoSave();
 
-  const studyHtml = `=== GoChess STUDY (Legion ALWAYS LEARNING) ===\n` +
-    `총 기록 ${total} | Go:${goMoves} Chess:${chessMoves} Fusion:${fusionCount} | Streak:${getStreak().days} | Puzzle:${puzzlesSolved}\n\n` +
-    `=== 자동 인사이트 (2-3 강제) ===\n${autoBlock}\n\n` +
-    `=== 최근 내 깨달음 ===\n${userKk || '(기록 버튼으로 강제 입력)'}\n\n` +
-    `이전 study: ${studyEntries}회 | FOMO playsLeft: ${fusionPlaysLeft}\n` +
-    `Raw 최근: ${JSON.stringify(gameLog.slice(-4), null, 1)}`;
+  const studyHtml = `=== GoChess 복기 노트 ===\n` +
+    `총 기록 ${total} | 바둑:${goMoves} 체스:${chessMoves} 퓨전:${fusionCount} | 연속출석:${getStreak().days} | 퍼즐:${puzzlesSolved}\n\n` +
+    `=== 자동 인사이트 (2-3개) ===\n${autoBlock}\n\n` +
+    `=== 최근 내 깨달음 ===\n${userKk || '(기록 버튼으로 입력)'}\n\n` +
+    `이전 복기: ${studyEntries}회 | 남은 퓨전 기회: ${fusionPlaysLeft}\n` +
+    `최근 기록: ${JSON.stringify(gameLog.slice(-4), null, 1)}`;
 
   // Inline UI (primary)
   if (content) content.textContent = studyHtml;
@@ -1320,9 +1291,9 @@ function showStudy(fromP4 = false) {
   if (!fromP4) {
     const win = window.open('', '_blank');
     win.document.write(`<pre style="white-space:pre-wrap;font-family:monospace;background:#111;color:#0f0;padding:16px;line-height:1.4;">${studyHtml}</pre>`);
-    win.document.title = 'GoChess Study - ALWAYS LEARNING';
+    win.document.title = 'GoChess 복기 노트';
   }
-  updateStatus('ALWAYS LEARNING 기록 완료 — Legion 강화됨');
+  updateStatus('복기 기록 완료');
 }
 
 // === p6 Voice Echo Notebook (study mode full advance) ===
@@ -1335,26 +1306,26 @@ function showP6VoiceEcho() {
   const s = calcP4Surprise();
   const voiceInsight = synthesizeVoiceEcho(s);
   p4VoiceEchoes.push(voiceInsight);
-  gameLog.push({mode:'study', voiceEcho: voiceInsight, fromP6: true, surprise: s, ts:Date.now()});
+  gameLog.push({mode:'study', voiceEcho: voiceInsight, ts:Date.now()});
   autoSave();
 
-  const echoText = `=== p6 Lung Echo Notebook (Voice + 창발) ===\nSurprise:${s.toFixed(3)} | Ache:${p4Spore.ache} | Wound:${p4Spore.wound.toFixed(2)}\n\n${voiceInsight.text}\n\nRe-listen evolves. 10th glaze births on deep ache.\n\n최근 Echoes:\n${p4VoiceEchoes.slice(-3).map(e=>e.text).join('\n---\n')}`;
+  const echoText = `=== 복기 노트 — 오늘의 한 수 ===\n\n${voiceInsight.text}\n\n다시 볼 때마다 새로운 깨달음이 보입니다.\n\n최근 메모:\n${p4VoiceEchoes.slice(-3).map(e=>e.text).join('\n---\n')}`;
 
   if (content) content.textContent = echoText;
   if (panel) panel.classList.remove('hidden');
-  updateStatus('p6 Voice Echo 주입 — ALWAYS LEARNING notebook from voice');
+  updateStatus('복기 노트에 오늘의 한 수를 기록했습니다');
 }
 
 function synthesizeVoiceEcho(surprise) {
   const base = [
-    '이 수에서 영역이 숨을 쉬기 시작했다. 긴 호흡이 필요하다.',
-    '상대가 아파할 때 내 숨이 편안해졌다. 그게 승리였다.',
-    '거의 놓친 수 — 그 아픔이 spore가 되어 다음을 키운다.',
-    '퓨전에서 한쪽을 포기하니 다른 쪽이 스스로 피어났다. 창발.',
+    '이 수에서 영역이 살아나기 시작했다. 서두르지 말고 길게 보자.',
+    '상대가 흔들릴 때 오히려 내 형세가 편안해졌다. 그게 승부처였다.',
+    '거의 놓칠 뻔한 수 — 그 아쉬움이 다음 판을 키운다.',
+    '퓨전에서 한쪽을 내주니 다른 쪽이 저절로 커졌다. 균형의 묘.',
   ];
   let txt = base[Math.floor(Math.random()*base.length)];
-  if (surprise > 0.25) txt += ' (10th glaze: 관찰만으로 미소가 피어남 — Mona의 unpainted breath)';
-  if (p4Spore.ache > 1) txt += ' Ache-Breath: 아픈 멈춤이 진짜 가르침.';
+  if (surprise > 0.25) txt += ' 잠시 멈춰 판 전체를 바라보니 새로운 길이 보였다.';
+  if (p4Spore.ache > 1) txt += ' 아쉬운 순간이 사실은 가장 큰 배움이다.';
   return { text: txt, surprise: surprise.toFixed(3), ts: Date.now() };
 }
 
@@ -1383,7 +1354,7 @@ window.onload = () => {
     document.getElementById('chess-board').classList.add('hidden');
     document.getElementById('fusion-panel').classList.add('hidden');
   }
-  updateStatus(hadSave ? 'GoChess 복원됨 (ALWAYS LEARNING)' : 'GoChess 시작 • 첫 플레이');
+  updateStatus(hadSave ? 'GoChess 이어하기 (기록 복원됨)' : 'GoChess 시작 • 첫 플레이');
   renderStreak();
   updateFusionBuffsUI(); // always init Legion buffs display
   console.log('%c[Legion] p4 GoChess 로드. ALWAYS LEARNING + persistence + streak. Edge cases handled.', 'color:#4a9eff');

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>GoChess — 바둑 + 체스 (18+ FICTIONAL VIRTUAL STRATEGY SIM)</title>
-  <meta name="description" content="18+ FICTIONAL VIRTUAL game. Go + Chess fusion hybrid. NOT REAL opponents. Pure code entertainment + Legion ALWAYS LEARNING study. Prominent disclosure enforced. No real money / gambling.">
+  <meta name="description" content="18+ 가상 전략 시뮬레이션. 바둑 + 체스 융합 게임. 실제 대전 아님. 순수 학습·오락용. 현금/도박 없음.">
   <link rel="stylesheet" href="style.css">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#4a9eff">
@@ -19,12 +19,12 @@
         <button class="primary" onclick="switchMode('chess')">체스</button>
         <button class="primary" onclick="switchMode('fusion')">퓨전 모드</button>
         <button class="util" onclick="showStudy()">공부 모드</button>
-        <button class="util" onclick="startDailyPuzzle()">Daily Puzzle</button>
-        <button class="util" onclick="crossLinkP3()">p3 전략스승</button>
-        <button class="util" onclick="showP6VoiceEcho()">p6 Lung Echo</button>
+        <button class="util" onclick="startDailyPuzzle()">오늘의 퍼즐</button>
+        <button class="util" onclick="crossLinkP3()">전략 코치</button>
+        <button class="util" onclick="showP6VoiceEcho()">복기 노트</button>
       </div>
       <div class="status" id="status">준비됨 • 턴: 흑</div>
-      <div id="streak-display" style="font-size:0.85em;color:#4a9eff;margin-top:4px;">🔥 Streak: 0일 • 오늘 0수 (FOMO)</div>
+      <div id="streak-display" style="font-size:0.85em;color:#4a9eff;margin-top:4px;">🔥 연속 출석: 0일 • 오늘 0수</div>
     </header>
 
     <!-- Go Board -->
@@ -44,7 +44,7 @@
       <div id="chess-grid" class="chess-grid"></div>
       <div class="controls">
         <button onclick="resetChess()">초기화</button>
-        <button onclick="endGameAndStudy()">종료+ALWAYS LEARNING</button>
+        <button onclick="endGameAndStudy()">종료 + 복기</button>
       </div>
     </div>
 
@@ -63,35 +63,33 @@
       </div>
       <p class="hint">Chess 좋은 수 → Go에 보너스 돌 | Go 영역 → Chess 기물 강화 (Live)</p>
       <div id="fusion-buffs" class="fusion-buffs">버프: 대기 중</div>
-      <div id="fusion-fomo" class="fusion-fomo">Limited Fusion Window: 5 plays</div>
-      <button onclick="playFusionMove()">퓨전 수 두기 (Live Cross-Buff)</button>
-      <button onclick="showStudyP4()">공부 모드 (Learning)</button>
-      <button onclick="endGameAndStudy()">게임 종료 + ALWAYS LEARNING 분석</button>
+      <div id="fusion-fomo" class="fusion-fomo">오늘의 퓨전 기회: 5회 남음</div>
+      <button onclick="playFusionMove()">퓨전 수 두기 (교차 버프)</button>
+      <button onclick="showStudyP4()">공부 모드</button>
+      <button onclick="endGameAndStudy()">게임 종료 + 복기 분석</button>
     </div>
 
-    <!-- Study Mode UI (inline, Legion ALWAYS LEARNING) -->
+    <!-- Study Mode UI (inline) -->
     <div id="study-panel" class="board-section hidden">
-      <h2>📖 공부 모드 — ALWAYS LEARNING (2-3 자동 깨달음 강제 기록)</h2>
+      <h2>📖 공부 모드 — 복기 노트 (자동 인사이트 2-3개 기록)</h2>
       <div id="study-content" style="background:#111; color:#0f0; padding:12px; border-radius:6px; white-space:pre-wrap; font-family:monospace; font-size:0.85em; max-height:320px; overflow:auto;"></div>
       <div class="controls">
         <button onclick="recordUserInsight()">⚡ 내 깨달음 강제 기록</button>
         <button onclick="hideStudy()">닫기</button>
         <button onclick="showFullStudyLog()">전체 Raw Log</button>
       </div>
-      <div class="hint">매 게임 후 2-3 자동 인사이트 + 개인 깨달음 필수 기록. Legion 무한 업그레이드.</div>
+      <div class="hint">매 게임 후 자동 인사이트 2-3개 + 개인 깨달음을 기록해 실력을 키워보세요.</div>
     </div>
 
     <footer>
       <div class="legion-note">
-        Legion ALWAYS LEARNING 적용 • auto-save + streak + puzzle 매수 후 기록 • 공부 모드에서 2-3 자동인사이트 + 강제 깨달음<br>
-        <small>Fictional strategy simulation • Not real opponents • Auto-persist</small><br>
-        <small style="color:#666">Cross-Legion: Prominent disclosure — 이 앱은 가상 시뮬레이션. 실제 대전/전략 아님. 18+ fictional. ALWAYS LEARNING: 매 플레이 후 study로 배움 기록. localStorage 완전 persist.</small>
+        자동 저장 + 연속 출석 + 퍼즐 기록 • 공부 모드에서 자동 인사이트 2-3개 + 개인 깨달음<br>
+        <small>가상 전략 시뮬레이션 • 실제 대전 아님 • 진행 자동 저장</small><br>
+        <small style="color:#666">안내: 이 앱은 가상 시뮬레이션입니다. 실제 대전이 아닙니다. 18+ 픽션. 매 플레이 후 공부 모드에서 배움을 기록하세요. 진행 상황은 기기에 자동 저장됩니다.</small>
       </div>
     </footer>
   </div>
 
-  <script src="../p6-airpods-artistic/lung-surprise-eye.js"></script>
   <script src="script.js"></script>
-  <div style="text-align:center;font-size:10px;opacity:.55;margin:14px 0;">p4 × p6 Legion: Lung Surprise Eye + Ache-Breath + 창발 DNA • Vitruvian + sfumato + voice echo notebook. <a href="../p6-airpods-artistic/" style="color:#c5a46e">Aether Canvas p6</a></div>
 </body>
 </html>
