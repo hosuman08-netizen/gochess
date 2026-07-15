@@ -1,0 +1,11 @@
+{
+  "name": "GoChess - 바둑 + 체스",
+  "short_name": "GoChess",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#1a1f2e",
+  "theme_color": "#4a9eff",
+  "orientation": "any",
+  "description": "18+ FICTIONAL VIRTUAL STRATEGY SIMULATION — Go + Chess fusion. NOT REAL. No gambling/money. Legion ALWAYS LEARNING (2-3 auto insights + forced post-game 깨달음) + FOMO playsLeft + streak + live cross-buffs. Prominent disclosure everywhere. Pure entertainment + skill learning. Cross-linked p3 AI companions as mentors. p6 Lung Voice + p2 Voice Echo DNA cross for p1-p6 full advance.",
+  "icons": []
+}

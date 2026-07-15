@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GoChess — 바둑 + 체스 (18+ FICTIONAL VIRTUAL STRATEGY SIM)</title>
+  <meta name="description" content="18+ FICTIONAL VIRTUAL game. Go + Chess fusion hybrid. NOT REAL opponents. Pure code entertainment + Legion ALWAYS LEARNING study. Prominent disclosure enforced. No real money / gambling.">
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#4a9eff">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div style="background:#2a1010;color:#ffaa66;padding:4px 10px;border-radius:3px;font-size:0.72em;margin-bottom:6px;text-align:center;font-weight:600;">18+ FICTIONAL VIRTUAL STRATEGY SIMULATION • NOT REAL OPPONENTS • NO REAL MONEY • PURE ENTERTAINMENT + LEARNING (미꾸라지 compliant)</div>
+      <h1>GoChess <span class="tag">바둑 + 체스</span></h1>
+      <div class="nav">
+        <button onclick="switchMode('go')">바둑</button>
+        <button onclick="switchMode('chess')">체스</button>
+        <button onclick="switchMode('fusion')">퓨전 모드</button>
+        <button onclick="showStudy()">공부 모드</button>
+        <button onclick="startDailyPuzzle()">Daily Puzzle 🔥</button>
+        <button onclick="crossLinkP3()">p3 AI 전략스승</button>
+        <button onclick="showP6VoiceEcho()">🫁 p6 Lung Echo Notebook (Voice from 창발)</button>
+      </div>
+      <div class="status" id="status">준비됨 • 턴: 흑</div>
+      <div id="streak-display" style="font-size:0.85em;color:#4a9eff;margin-top:4px;">🔥 Streak: 0일 • 오늘 0수 (FOMO)</div>
+    </header>
+
+    <!-- Go Board -->
+    <div id="go-board" class="board-section">
+      <h2>바둑 (19×19)</h2>
+      <div id="go-grid" class="go-grid"></div>
+      <div class="controls">
+        <button onclick="passGo()">패스</button>
+        <button onclick="resetGo()">초기화</button>
+        <button onclick="endGameAndStudy()">종료+학습</button>
+      </div>
+    </div>
+
+    <!-- Chess Board -->
+    <div id="chess-board" class="board-section hidden">
+      <h2>체스 (8×8)</h2>
+      <div id="chess-grid" class="chess-grid"></div>
+      <div class="controls">
+        <button onclick="resetChess()">초기화</button>
+        <button onclick="endGameAndStudy()">종료+ALWAYS LEARNING</button>
+      </div>
+    </div>
+
+    <!-- Fusion -->
+    <div id="fusion-panel" class="board-section hidden">
+      <h2>퓨전: 바둑체스</h2>
+      <div class="fusion-container">
+        <div>
+          <h3>바둑 영향</h3>
+          <div id="fusion-go"></div>
+        </div>
+        <div>
+          <h3>체스 영향</h3>
+          <div id="fusion-chess"></div>
+        </div>
+      </div>
+      <p class="hint">Chess 좋은 수 → Go에 보너스 돌 | Go 영역 → Chess 기물 강화 (Live)</p>
+      <div id="fusion-buffs" class="fusion-buffs">버프: 대기 중</div>
+      <div id="fusion-fomo" class="fusion-fomo">Limited Fusion Window: 5 plays</div>
+      <button onclick="playFusionMove()">퓨전 수 두기 (Live Cross-Buff)</button>
+      <button onclick="showStudyP4()">공부 모드 (Learning)</button>
+      <button onclick="endGameAndStudy()">게임 종료 + ALWAYS LEARNING 분석</button>
+    </div>
+
+    <!-- Study Mode UI (inline, Legion ALWAYS LEARNING) -->
+    <div id="study-panel" class="board-section hidden">
+      <h2>📖 공부 모드 — ALWAYS LEARNING (2-3 자동 깨달음 강제 기록)</h2>
+      <div id="study-content" style="background:#111; color:#0f0; padding:12px; border-radius:6px; white-space:pre-wrap; font-family:monospace; font-size:0.85em; max-height:320px; overflow:auto;"></div>
+      <div class="controls">
+        <button onclick="recordUserInsight()">⚡ 내 깨달음 강제 기록</button>
+        <button onclick="hideStudy()">닫기</button>
+        <button onclick="showFullStudyLog()">전체 Raw Log</button>
+      </div>
+      <div class="hint">매 게임 후 2-3 자동 인사이트 + 개인 깨달음 필수 기록. Legion 무한 업그레이드.</div>
+    </div>
+
+    <footer>
+      <div class="legion-note">
+        Legion ALWAYS LEARNING 적용 • auto-save + streak + puzzle 매수 후 기록 • 공부 모드에서 2-3 자동인사이트 + 강제 깨달음<br>
+        <small>Fictional strategy simulation • Not real opponents • Auto-persist</small><br>
+        <small style="color:#666">Cross-Legion: Prominent disclosure — 이 앱은 가상 시뮬레이션. 실제 대전/전략 아님. 18+ fictional. ALWAYS LEARNING: 매 플레이 후 study로 배움 기록. localStorage 완전 persist.</small>
+      </div>
+    </footer>
+  </div>
+
+  <script src="../p6-airpods-artistic/lung-surprise-eye.js"></script>
+  <script src="script.js"></script>
+  <div style="text-align:center;font-size:10px;opacity:.55;margin:14px 0;">p4 × p6 Legion: Lung Surprise Eye + Ache-Breath + 창발 DNA • Vitruvian + sfumato + voice echo notebook. <a href="../p6-airpods-artistic/" style="color:#c5a46e">Aether Canvas p6</a></div>
+</body>
+</html>

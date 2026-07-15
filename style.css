@@ -1,0 +1,187 @@
+:root {
+  --bg: #1a1f2e;
+  --accent: #4a9eff;
+  --wood: #c4a484;
+  --stone-black: #222;
+  --stone-white: #eee;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: #eee;
+  font-family: system-ui, sans-serif;
+}
+
+.container {
+  max-width: 1100px;
+  margin: 20px auto;
+  padding: 20px;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 2rem;
+}
+
+.tag {
+  font-size: 0.7em;
+  background: #333;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.nav button {
+  background: #2a3040;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  margin: 4px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.nav button:hover {
+  background: var(--accent);
+}
+
+.board-section {
+  margin: 30px 0;
+}
+
+.go-grid {
+  display: grid;
+  grid-template-columns: repeat(19, 28px);
+  grid-template-rows: repeat(19, 28px);
+  gap: 1px;
+  background: #654321;
+  padding: 10px;
+  border: 8px solid #3d2914;
+  width: fit-content;
+  margin: 0 auto;
+}
+
+.go-grid .cell {
+  width: 28px;
+  height: 28px;
+  background: #c4a484;
+  position: relative;
+  cursor: pointer;
+}
+
+.go-grid .cell:hover {
+  background: #d4b494;
+}
+
+.go-grid .stone {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.6);
+}
+
+.go-grid .stone.black { background: #222; }
+.go-grid .stone.white { background: #eee; border: 1px solid #666; }
+
+.chess-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 52px);
+  grid-template-rows: repeat(8, 52px);
+  gap: 0;
+  width: fit-content;
+  margin: 0 auto;
+  border: 6px solid #3d2914;
+  background: #654321;
+}
+
+.chess-grid .cell {
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.chess-grid .cell.light { background: #f0d9b5; }
+.chess-grid .cell.dark { background: #b58863; }
+
+.chess-grid .cell.selected {
+  background: #7fc97f !important;
+}
+
+.chess-grid .cell.buffed {
+  box-shadow: 0 0 8px #4a9eff !important;
+  border: 1px solid #4a9eff;
+}
+
+.fusion-container {
+  display: flex;
+  gap: 40px;
+  justify-content: center;
+  /* Vitruvian board proportion */
+  width: 61.8%;
+  margin: 0 auto;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.controls {
+  margin-top: 12px;
+  text-align: center;
+}
+
+.controls button {
+  margin: 0 6px;
+  padding: 8px 14px;
+}
+
+.status {
+  margin-top: 8px;
+  color: #aaa;
+  font-size: 0.9em;
+}
+
+.legion-note {
+  margin-top: 40px;
+  font-size: 0.8em;
+  color: #888;
+  border-top: 1px solid #333;
+  padding-top: 12px;
+}
+
+.hint {
+  font-size: 0.85em;
+  color: #aaa;
+  text-align: center;
+}
+
+.fusion-buffs {
+  text-align: center;
+  margin: 8px 0;
+  padding: 6px;
+  background: #2a3040;
+  border-radius: 4px;
+  font-size: 0.9em;
+  color: #4a9eff;
+}
+
+.fusion-fomo {
+  text-align: center;
+  margin: 4px 0 12px;
+  font-size: 0.75em;
+  color: #ffaa44;
+  font-weight: 600;
+}
+
+.mini-board {
+  margin: 0 auto;
+  cursor: default;
+}
