@@ -1,91 +1,176 @@
 :root {
-  --bg: #1a1f2e;
-  --accent: #4a9eff;
-  --wood: #c4a484;
-  --stone-black: #222;
-  --stone-white: #eee;
+  /* 60/30/10 palette — one accent, warm wood secondary, calm navy ground */
+  --bg: #141824;          /* 60 ground */
+  --surface: #1c2130;     /* raised panels */
+  --surface-2: #232a3d;   /* controls */
+  --line: #2c3244;        /* hairlines */
+  --wood: #c4a484;        /* 30 secondary (boards) */
+  --wood-dark: #3d2914;
+  --ink: #ecedf2;         /* primary text */
+  --ink-dim: #9098ab;     /* secondary text */
+  --accent: #4a9eff;      /* 10 — the ONE accent, used sparingly */
+  --accent-soft: rgba(74,158,255,0.14);
+  --warn: #e0a24a;        /* reserved for scarcity/FOMO only */
+  --stone-black: #1b1b1f;
+  --stone-white: #f2f2ee;
+  /* 8px spacing scale */
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px; --s7: 48px;
+  --r: 8px;
 }
+
+* { box-sizing: border-box; }
 
 body {
   margin: 0;
   background: var(--bg);
-  color: #eee;
-  font-family: system-ui, sans-serif;
+  color: var(--ink);
+  font-family: system-ui, -apple-system, sans-serif;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
 }
 
 .container {
-  max-width: 1100px;
-  margin: 20px auto;
-  padding: 20px;
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: var(--s6) var(--s5);
 }
 
+/* --- Header: one hero (H1), quiet everything else --- */
 header h1 {
-  margin: 0;
-  font-size: 2rem;
+  margin: 0 0 var(--s2);
+  font-size: 2.4rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 .tag {
-  font-size: 0.7em;
-  background: #333;
-  padding: 2px 8px;
-  border-radius: 4px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--ink-dim);
+  background: transparent;
+  padding: 0;
+  margin-left: var(--s2);
+  vertical-align: middle;
+}
+
+/* Disclosure: restrained single line, does not fight the title */
+.disclosure {
+  font-size: 0.68rem;
+  color: var(--ink-dim);
+  letter-spacing: 0.02em;
+  margin-bottom: var(--s4);
+}
+
+/* --- Nav: primary game modes are the heroes; utilities are quiet --- */
+.nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  margin: var(--s4) 0 var(--s3);
 }
 
 .nav button {
-  background: #2a3040;
-  color: #fff;
-  border: none;
-  padding: 8px 16px;
-  margin: 4px;
-  border-radius: 6px;
+  background: var(--surface-2);
+  color: var(--ink);
+  border: 1px solid transparent;
+  padding: var(--s2) var(--s4);
+  border-radius: var(--r);
   cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: background 160ms ease-out, border-color 160ms ease-out, transform 120ms ease-out;
 }
+.nav button:hover { background: var(--accent-soft); border-color: var(--accent); }
+.nav button:active { transform: translateY(1px); }
 
-.nav button:hover {
+/* Primary game-mode buttons carry the accent — the visual hero of the nav */
+.nav button.primary {
   background: var(--accent);
+  color: #06101f;
+  font-weight: 600;
+}
+.nav button.primary:hover { background: #63acff; border-color: transparent; }
+
+/* Utility / cross-links: demoted, low-contrast, no accent */
+.nav button.util {
+  background: transparent;
+  color: var(--ink-dim);
+  border: 1px solid var(--line);
+  font-size: 0.85rem;
+  padding: var(--s2) var(--s3);
+}
+.nav button.util:hover { color: var(--ink); border-color: var(--ink-dim); background: transparent; }
+
+.status {
+  margin-top: var(--s2);
+  color: var(--ink-dim);
+  font-size: 0.9rem;
 }
 
-.board-section {
-  margin: 30px 0;
+#streak-display {
+  font-size: 0.85rem;
+  color: var(--accent);
+  margin-top: var(--s1);
 }
 
+.board-section { margin: var(--s6) 0; }
+.board-section h2 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0 0 var(--s4);
+  text-align: center;
+}
+
+/* --- Go board with traditional star points (화점) — the one novel touch --- */
 .go-grid {
   display: grid;
   grid-template-columns: repeat(19, 28px);
   grid-template-rows: repeat(19, 28px);
   gap: 1px;
-  background: #654321;
-  padding: 10px;
-  border: 8px solid #3d2914;
+  background: var(--wood-dark);
+  padding: var(--s3);
+  border: 6px solid #2a1c0e;
+  border-radius: 4px;
   width: fit-content;
   margin: 0 auto;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.4);
 }
 
 .go-grid .cell {
   width: 28px;
   height: 28px;
-  background: #c4a484;
+  background: var(--wood);
   position: relative;
   cursor: pointer;
+  transition: background 120ms ease-out;
 }
+.go-grid .cell:hover { background: #d4b494; }
 
-.go-grid .cell:hover {
-  background: #d4b494;
+/* star point dot */
+.go-grid .cell.star::after {
+  content: "";
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--wood-dark);
+  transform: translate(-50%, -50%);
 }
 
 .go-grid .stone {
   position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 24px;
-  height: 24px;
+  top: 2px; left: 2px;
+  width: 24px; height: 24px;
   border-radius: 50%;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.6);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.55);
+  animation: drop 140ms ease-out;
 }
+@keyframes drop { from { transform: scale(0.7); opacity: 0.5; } to { transform: scale(1); opacity: 1; } }
+.go-grid .stone.black { background: radial-gradient(circle at 35% 30%, #4a4a52, var(--stone-black)); }
+.go-grid .stone.white { background: radial-gradient(circle at 35% 30%, #ffffff, #d9d9d2); }
 
-.go-grid .stone.black { background: #222; }
-.go-grid .stone.white { background: #eee; border: 1px solid #666; }
-
+/* --- Chess board --- */
 .chess-grid {
   display: grid;
   grid-template-columns: repeat(8, 52px);
@@ -93,95 +178,102 @@ header h1 {
   gap: 0;
   width: fit-content;
   margin: 0 auto;
-  border: 6px solid #3d2914;
-  background: #654321;
+  border: 6px solid var(--wood-dark);
+  border-radius: 4px;
+  background: var(--wood-dark);
+  box-shadow: 0 8px 28px rgba(0,0,0,0.4);
 }
 
 .chess-grid .cell {
-  width: 52px;
-  height: 52px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  width: 52px; height: 52px;
+  display: flex; align-items: center; justify-content: center;
   font-size: 32px;
   cursor: pointer;
   user-select: none;
+  transition: box-shadow 140ms ease-out, background 120ms ease-out;
 }
-
-.chess-grid .cell.light { background: #f0d9b5; }
-.chess-grid .cell.dark { background: #b58863; }
-
-.chess-grid .cell.selected {
-  background: #7fc97f !important;
-}
-
-.chess-grid .cell.buffed {
-  box-shadow: 0 0 8px #4a9eff !important;
-  border: 1px solid #4a9eff;
-}
+.chess-grid .cell.light { background: #eadfc8; }
+.chess-grid .cell.dark { background: #a97e5b; }
+.chess-grid .cell.selected { background: var(--accent) !important; }
+.chess-grid .cell.buffed { box-shadow: inset 0 0 0 2px var(--accent); }
 
 .fusion-container {
   display: flex;
-  gap: 40px;
+  gap: var(--s7);
   justify-content: center;
-  /* Vitruvian board proportion */
-  width: 61.8%;
+  width: 61.8%;   /* Vitruvian proportion — kept, it's the deliberate novelty */
   margin: 0 auto;
+  min-width: 320px;
 }
-
-.hidden {
-  display: none !important;
-}
-
-.controls {
-  margin-top: 12px;
+.fusion-container h3 {
+  font-size: 0.95rem;
+  color: var(--ink-dim);
+  font-weight: 600;
   text-align: center;
 }
 
-.controls button {
-  margin: 0 6px;
-  padding: 8px 14px;
-}
+.hidden { display: none !important; }
 
-.status {
-  margin-top: 8px;
-  color: #aaa;
-  font-size: 0.9em;
+.controls { margin-top: var(--s4); text-align: center; }
+.controls button, .fusion-container button, #fusion-panel > button {
+  margin: var(--s1) var(--s1);
+  padding: var(--s2) var(--s4);
+  background: var(--surface-2);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background 160ms ease-out, border-color 160ms ease-out;
+}
+.controls button:hover, .fusion-container button:hover, #fusion-panel > button:hover {
+  background: var(--accent-soft); border-color: var(--accent);
 }
 
 .legion-note {
-  margin-top: 40px;
-  font-size: 0.8em;
-  color: #888;
-  border-top: 1px solid #333;
-  padding-top: 12px;
+  margin-top: var(--s7);
+  font-size: 0.78rem;
+  color: var(--ink-dim);
+  border-top: 1px solid var(--line);
+  padding-top: var(--s4);
 }
+.legion-note small { color: #6a7183; }
 
-.hint {
-  font-size: 0.85em;
-  color: #aaa;
-  text-align: center;
-}
+.hint { font-size: 0.85rem; color: var(--ink-dim); text-align: center; }
 
 .fusion-buffs {
   text-align: center;
-  margin: 8px 0;
-  padding: 6px;
-  background: #2a3040;
-  border-radius: 4px;
-  font-size: 0.9em;
-  color: #4a9eff;
+  margin: var(--s2) auto;
+  padding: var(--s2) var(--s4);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  font-size: 0.88rem;
+  color: var(--accent);
+  max-width: 520px;
 }
 
+/* FOMO/scarcity — the ONLY place the warn color appears */
 .fusion-fomo {
   text-align: center;
-  margin: 4px 0 12px;
-  font-size: 0.75em;
-  color: #ffaa44;
+  margin: var(--s1) 0 var(--s4);
+  font-size: 0.75rem;
+  color: var(--warn);
   font-weight: 600;
+  letter-spacing: 0.02em;
 }
 
-.mini-board {
-  margin: 0 auto;
-  cursor: default;
+.mini-board { margin: 0 auto; cursor: default; }
+
+#study-content {
+  background: #0e1119;
+  color: #7fd88f;
+  padding: var(--s4);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  white-space: pre-wrap;
+  font-family: ui-monospace, monospace;
+  font-size: 0.82rem;
+  max-height: 320px;
+  overflow: auto;
 }

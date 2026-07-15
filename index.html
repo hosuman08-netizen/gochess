@@ -12,16 +12,16 @@
 <body>
   <div class="container">
     <header>
-      <div style="background:#2a1010;color:#ffaa66;padding:4px 10px;border-radius:3px;font-size:0.72em;margin-bottom:6px;text-align:center;font-weight:600;">18+ FICTIONAL VIRTUAL STRATEGY SIMULATION • NOT REAL OPPONENTS • NO REAL MONEY • PURE ENTERTAINMENT + LEARNING (미꾸라지 compliant)</div>
       <h1>GoChess <span class="tag">바둑 + 체스</span></h1>
+      <div class="disclosure">18+ 가상 전략 시뮬레이션 · 실제 대전 아님 · 현금/도박 없음 · 순수 학습용 (fictional, prominent disclosure)</div>
       <div class="nav">
-        <button onclick="switchMode('go')">바둑</button>
-        <button onclick="switchMode('chess')">체스</button>
-        <button onclick="switchMode('fusion')">퓨전 모드</button>
-        <button onclick="showStudy()">공부 모드</button>
-        <button onclick="startDailyPuzzle()">Daily Puzzle 🔥</button>
-        <button onclick="crossLinkP3()">p3 AI 전략스승</button>
-        <button onclick="showP6VoiceEcho()">🫁 p6 Lung Echo Notebook (Voice from 창발)</button>
+        <button class="primary" onclick="switchMode('go')">바둑</button>
+        <button class="primary" onclick="switchMode('chess')">체스</button>
+        <button class="primary" onclick="switchMode('fusion')">퓨전 모드</button>
+        <button class="util" onclick="showStudy()">공부 모드</button>
+        <button class="util" onclick="startDailyPuzzle()">Daily Puzzle</button>
+        <button class="util" onclick="crossLinkP3()">p3 전략스승</button>
+        <button class="util" onclick="showP6VoiceEcho()">p6 Lung Echo</button>
       </div>
       <div class="status" id="status">준비됨 • 턴: 흑</div>
       <div id="streak-display" style="font-size:0.85em;color:#4a9eff;margin-top:4px;">🔥 Streak: 0일 • 오늘 0수 (FOMO)</div>

@@ -188,10 +188,12 @@ function initGo() {
   grid.innerHTML = '';
   grid.style.gridTemplateColumns = `repeat(19, 28px)`;
 
+  // Traditional 19x19 star points (화점 / hoshi): the one deliberate elegant touch
+  const STAR = new Set([3,9,15].flatMap(sx => [3,9,15].map(sy => sx + ',' + sy)));
   for (let y = 0; y < 19; y++) {
     for (let x = 0; x < 19; x++) {
       const cell = document.createElement('div');
-      cell.className = 'cell';
+      cell.className = STAR.has(x + ',' + y) ? 'cell star' : 'cell';
       cell.dataset.x = x;
       cell.dataset.y = y;
       cell.onclick = () => placeGoStone(x, y, cell);
