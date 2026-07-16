@@ -239,6 +239,21 @@ header h1 {
 }
 .legion-note small { color: #6a7183; }
 
+.app-links {
+  margin-top: var(--s4);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s4);
+  font-size: 0.78rem;
+}
+.app-links a {
+  color: var(--ink-dim);
+  text-decoration: none;
+  opacity: 0.75;
+  transition: opacity 0.15s, color 0.15s;
+}
+.app-links a:hover { opacity: 1; color: var(--accent); }
+
 .hint { font-size: 0.85rem; color: var(--ink-dim); text-align: center; }
 
 .fusion-buffs {
