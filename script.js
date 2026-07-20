@@ -1128,8 +1128,14 @@ function updateFusionBuffsUI() {
     buffsEl.innerHTML = `체스→바둑 보너스 대기: <b>${bonus}</b> | 바둑→체스 파워: <b>${power}</b> (실시간 교차)`;
   }
   if (fomoEl) {
-    fomoEl.textContent = `오늘의 퓨전 기회: ${fusionPlaysLeft}회 남음`;
+    const now = new Date();
+    const mid = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0);
+    const rem = Math.max(0, Math.floor((mid - now) / 60000));
+    const hh = Math.floor(rem / 60), mm = rem % 60;
+    const clock = (hh ? hh + '시간 ' : '') + mm + '분';
+    fomoEl.textContent = `오늘의 퓨전 기회: ${fusionPlaysLeft}회 남음 · 리셋 ${clock}`;
     if (fusionPlaysLeft <= 1) fomoEl.style.color = '#ff4444';
+    else fomoEl.style.color = '';
   }
 }
 
@@ -1642,6 +1648,7 @@ window.onload = () => {
   updateStatus(hadSave ? 'GoChess 이어하기 (기록 복원됨)' : 'GoChess 시작 • 첫 플레이');
   renderStreak();
   updateFusionBuffsUI(); // always init Legion buffs display
+  try { setInterval(function () { try { updateFusionBuffsUI(); } catch (e) {} }, 60000); } catch (e) {}
   console.log('%c[GoChess] 로드 완료.', 'color:#4a9eff');
 };
 // 3H Duolingo gochess daily
