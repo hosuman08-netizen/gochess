@@ -424,6 +424,7 @@ function passGo() {
     if (winner === '무승부') {
       showShareBanner('go-draw', { diff: r.diff }, '바둑 종료 — 무승부');
     } else {
+      try { if (window.legionTrack) window.legionTrack('activate'); } catch (e) {}
       showShareBanner('go-win', { winner, diff: r.diff }, `바둑 종료 — ${winner} 승`);
     }
     goPassCount = 0;
@@ -880,6 +881,7 @@ function evaluateChessEnd() {
     updateStatus(`체크메이트! ${winnerKo} 승리 — ${sideKo} 킹이 잡혔습니다. (초기화로 재시작)`);
     autoSave();
     setTimeout(() => alert(`♚ 체크메이트! ${winnerKo}의 승리입니다.\n${sideKo}은(는) 킹을 지킬 합법 수가 없습니다.\n초기화 버튼으로 새 게임을 시작하세요.`), 80);
+    try { if (window.legionTrack) window.legionTrack('activate'); } catch (e) {}
     showShareBanner('chess-win', { margin: 'checkmate', winner: winnerKo }, `♚ 체크메이트! ${winnerKo} 승리`);
     setTimeout(endGameAndStudy, 400);
     return true;
@@ -1325,6 +1327,7 @@ function checkPuzzleSolution(from, to) {
     alert(`✅ 퍼즐 성공! 연속 출석 보너스 +1. 오늘 ${s.count}수. 포획 기회를 잘 포착했어요!`);
     gameLog.push({mode:'puzzle', solved: true, ts: Date.now()});
     autoSave();
+    try { if (window.legionTrack) window.legionTrack('activate'); } catch (e) {}
     showShareBanner('puzzle', {}, '✅ 오늘의 퍼즐 클리어!');
     // Reset to normal play board after solve (or keep)
     setTimeout(() => {
@@ -1582,7 +1585,7 @@ async function shareResult(kind, data = {}) {
 // X(트위터) 인텐트 — 옵션 공유 경로
 function shareResultToX(kind, data = {}) {
   const text = buildShareText(kind, data);
-  try { if (window.legionTrack) window.legionTrack('share_x'); } catch (e) {}
+  try { if (window.legionTrack) { window.legionTrack('share'); window.legionTrack('share_x'); } } catch (e) {}
   const url = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(text);
   window.open(url, '_blank', 'noopener,noreferrer');
 }
