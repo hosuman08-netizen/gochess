@@ -1493,6 +1493,16 @@ function applyVitruvianProportion(el) {
 // 내부 크로스로직(p6/fusion 등)은 건드리지 않고, 유저 공유는 여기 신규 함수만 사용.
 // ============================================================
 const GOCHESS_URL = 'https://hosuman08-netizen.github.io/gochess/';
+function gochessKRef() {
+  try {
+    var id = localStorage.getItem('gc_k_id');
+    if (!id) { id = 'g' + Math.random().toString(36).slice(2, 8); localStorage.setItem('gc_k_id', id); }
+    return id;
+  } catch (e) { return 'share'; }
+}
+function gochessShareUrl() {
+  return GOCHESS_URL + (GOCHESS_URL.indexOf('?') >= 0 ? '&' : '?') + 'ref=' + encodeURIComponent(gochessKRef());
+}
 
 // 결과별 매력적인 공유 문안 생성 (과장·가짜수치 없이, 실제 결과만 요약)
 function buildShareText(kind, data = {}) {
@@ -1523,7 +1533,7 @@ function buildShareText(kind, data = {}) {
       line = `바둑이랑 체스를 한 화면에서 두는 웹 게임 발견. 설치 없이 바로 됨.`;
   }
   const hashtags = { 'chess-win':'#체스 #바둑', 'chess-draw':'#체스', 'go-win':'#바둑', 'go-draw':'#바둑', 'puzzle':'#퍼즐 #체스' }[kind] || '#바둑 #체스';
-  return `${line}${streakTail}\n너도 해봐 → ${GOCHESS_URL} ${hashtags}`;
+  return `${line}${streakTail}\n너도 해봐 → ${gochessShareUrl()} ${hashtags}`;
 }
 
 // 가벼운 토스트 (복사됨 등). 자동 소멸, 되돌림 불필요.
@@ -1574,7 +1584,7 @@ async function shareResult(kind, data = {}) {
   try { if (window.legionTrack) window.legionTrack('share'); } catch (e) {}
   if (navigator.share) {
     try {
-      await navigator.share({ title: 'GoChess', text, url: GOCHESS_URL });
+      await navigator.share({ title: 'GoChess', text, url: gochessShareUrl() });
       return;
     } catch (e) {
       // 사용자가 취소한 경우엔 아무것도 안 함 (복사 폴백 생략)
