@@ -180,6 +180,7 @@ function renderStreak() {
 
 // --- Mode Switching ---
 function switchMode(mode) {
+  if (typeof window.hideTsumego === 'function') window.hideTsumego(); // 사활 훈련소 UI 정리
   document.getElementById('go-board').classList.add('hidden');
   document.getElementById('chess-board').classList.add('hidden');
   document.getElementById('fusion-panel').classList.add('hidden');
@@ -1393,6 +1394,7 @@ function crossLinkP3() {
 
 // --- Study / Learning Mode (ALWAYS LEARNING) - upgraded strong version + inline UI ---
 function showStudy(fromP4 = false) {
+  if (typeof window.hideTsumego === 'function') window.hideTsumego();
   const total = gameLog.length;
   const panel = document.getElementById('study-panel');
   const content = document.getElementById('study-content');
@@ -1484,6 +1486,7 @@ function showStudy(fromP4 = false) {
 // fusion moves powered by breath/spore surprise already wired
 // Vitruvian + sfumato in eye viz + notebook
 function showP6VoiceEcho() {
+  if (typeof window.hideTsumego === 'function') window.hideTsumego();
   const panel = document.getElementById('study-panel');
   const content = document.getElementById('study-content');
   const s = calcP4Surprise();

@@ -274,6 +274,70 @@
     if (!op) { el.innerHTML = '<span class="cp-dim">정석 이탈 — 나만의 수순</span>'; return; }
     var nextTxt = op.next && op.next.length ? ' · <span class="cp-dim">이론상 다음: ' + op.next.join(', ') + '</span>' : ' · <span class="cp-dim">정석 라인 종료</span>';
     el.innerHTML = '<b>' + op.name + '</b> <span class="cp-eco">' + op.eco + '</span>' + nextTxt;
+    var ex = document.getElementById('cp-explorer');
+    if (ex && !ex.classList.contains('hidden')) renderExplorer();
+  }
+
+  // ==================== 정석 탐색기 (내장 정석 북 기준 결정적 통계) ====================
+  // 현재 수순을 접두사로 갖는 이론 라인들을 모아, 다음 수별로 '몇 갈래가
+  // 지나가는지'와 도달 가능한 오프닝을 보여준다. 가짜 승률 아님 — 내장 북의
+  // 실제 라인 수(정직 표기). 라이브 대국이면 실제 둔 수 기준으로 갱신.
+  function explorerData() {
+    var sans = (S.mode === 'game') ? S.sans : [];
+    var len = sans.length, book = CP.BOOK;
+    var byMove = {}; // move -> { count, names:Set, ecos:Set }
+    var enteredNames = [];
+    for (var i = 0; i < book.length; i++) {
+      var line = book[i].moves;
+      // sans가 이 라인의 접두사인가?
+      var pref = true;
+      for (var j = 0; j < len && j < line.length; j++) { if (sans[j] !== line[j]) { pref = false; break; } }
+      if (!pref || len > line.length) continue;
+      if (len === line.length) { enteredNames.push(book[i]); continue; } // 이 라인에 완전 진입
+      var nx = line[len];
+      if (!byMove[nx]) byMove[nx] = { move: nx, count: 0, names: {}, best: null };
+      byMove[nx].count++;
+      byMove[nx].names[book[i].name] = book[i].eco;
+      if (!byMove[nx].best || line.length < byMove[nx].best.len) byMove[nx].best = { name: book[i].name, eco: book[i].eco, len: line.length };
+    }
+    var arr = Object.keys(byMove).map(function (k) { return byMove[k]; });
+    arr.sort(function (a, b) { return b.count - a.count || a.move.localeCompare(b.move); });
+    return { rows: arr, entered: enteredNames, plies: len, side: (len % 2 === 0 ? 'w' : 'b') };
+  }
+
+  function renderExplorer() {
+    var body = document.getElementById('cp-explorer-body'); if (!body) return;
+    var d = explorerData();
+    var html = '';
+    var op = (S.mode === 'game' && S.sans.length) ? CP.detectOpening(S.sans) : null;
+    var pos = d.plies === 0 ? '초기 국면' : (op && op.entered ? op.name + ' <span class="cp-eco">' + op.eco + '</span>' : (d.plies) + '수 진행');
+    html += '<div class="cp-dim" style="margin-bottom:6px">' + pos + ' · ' + (d.side === 'w' ? '백' : '흑') + ' 차례 · 이론 <b style="color:var(--ink)">' + d.rows.length + '</b>갈래</div>';
+    if (!d.rows.length) {
+      html += '<div class="cp-dim">이 국면에서 이어지는 정석 라인이 없어요' + (d.entered.length ? ' — 정석 라인 종료.' : ' — 정석 밖입니다.') + '</div>';
+    } else {
+      var max = d.rows[0].count;
+      html += '<div class="cp-xlist">';
+      for (var i = 0; i < d.rows.length; i++) {
+        var r = d.rows[i], pct = Math.round(r.count / max * 100);
+        var names = Object.keys(r.names);
+        var label = r.best ? r.best.name : names[0];
+        html += '<div class="cp-xrow">' +
+          '<span class="cp-xmove">' + r.move + '</span>' +
+          '<span class="cp-xbarwrap"><span class="cp-xbar" style="width:' + pct + '%"></span></span>' +
+          '<span class="cp-xcount">' + r.count + '갈래</span>' +
+          '<span class="cp-xname">' + label + (names.length > 1 ? ' 외 ' + (names.length - 1) : '') + '</span>' +
+          '</div>';
+      }
+      html += '</div>';
+    }
+    html += '<div class="cp-dim" style="margin-top:8px;font-size:0.7rem">숫자는 내장 정석 북에서 이 수를 지나는 이론 라인 수입니다(대국 인기·승률 아님). 참고용 학습 자료.</div>';
+    body.innerHTML = html;
+  }
+
+  function toggleExplorer() {
+    var ex = document.getElementById('cp-explorer'); if (!ex) return;
+    if (ex.classList.contains('hidden')) { ex.classList.remove('hidden'); hidePanel('cp-review'); renderExplorer(); try { if (window.legionTrack) legionTrack('daily_focus', { mode: 'explorer' }); } catch (e) {} }
+    else ex.classList.add('hidden');
   }
 
   // ============================ 형세 평가 바 ============================
@@ -568,9 +632,11 @@
       '<div class="cp-toolbar">' +
         '<button id="cp-hint-btn" class="cp-btn">힌트</button>' +
         '<button id="cp-undo-btn" class="cp-btn">무르기</button>' +
+        '<button id="cp-explorer-btn" class="cp-btn">정석 탐색기</button>' +
         '<button id="cp-pgn-btn" class="cp-btn">PGN</button>' +
         '<button id="cp-review-btn" class="cp-btn cp-accent">게임 리뷰</button>' +
       '</div>' +
+      '<div id="cp-explorer" class="cp-panel hidden"><div class="cp-panel-h">📖 정석 탐색기<button class="cp-x" data-close="cp-explorer">✕</button></div><div id="cp-explorer-body"></div></div>' +
       '<div id="cp-review" class="cp-panel hidden"><div class="cp-panel-h">📊 게임 리뷰<button class="cp-x" data-close="cp-review">✕</button></div><div id="cp-review-body"></div></div>' +
       '<div id="cp-puzzle" class="cp-panel hidden">' +
         '<div class="cp-panel-h">🧩 퍼즐 훈련소<button class="cp-x" data-close="cp-puzzle" data-exit="1">✕</button></div>' +
@@ -601,6 +667,7 @@
     document.getElementById('cp-hint-btn').onclick = hint;
     document.getElementById('cp-undo-btn').onclick = takeback;
     document.getElementById('cp-pgn-btn').onclick = exportPGN;
+    document.getElementById('cp-explorer-btn').onclick = toggleExplorer;
     document.getElementById('cp-review-btn').onclick = runReview;
     document.getElementById('cp-puz-hint').onclick = puzzleHint;
     document.getElementById('cp-puz-next').onclick = function () { if (S.rush) nextRush(); else loadPuzzle(pickPuzzle()); };

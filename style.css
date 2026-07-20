@@ -523,6 +523,15 @@ header h1 {
 .cp-blun { color: #f0857a; border-color: #7a2f28; }
 .cp-better { color: var(--accent); font-size: 0.72rem; }
 
+/* 정석 탐색기 */
+.cp-xlist { display: flex; flex-direction: column; gap: 5px; }
+.cp-xrow { display: flex; align-items: center; gap: var(--s2); font-size: 0.78rem; }
+.cp-xmove { min-width: 46px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.cp-xbarwrap { flex: 0 0 84px; height: 7px; background: var(--surface-2); border-radius: 4px; overflow: hidden; }
+.cp-xbar { display: block; height: 100%; background: var(--accent); border-radius: 4px; transition: width 260ms ease-out; }
+.cp-xcount { min-width: 44px; color: var(--ink-dim); font-size: 0.72rem; font-variant-numeric: tabular-nums; }
+.cp-xname { color: var(--ink-dim); font-size: 0.72rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
 /* 퍼즐 */
 .cp-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: var(--s2); }
 .cp-chip {

@@ -1,10 +1,10 @@
 /* Legion PWA shell gochess */
-const C = 'gochess-v2';
+const C = 'gochess-v3';
 self.addEventListener('install', e => {
   e.waitUntil(
     caches.open(C).then(c => c.addAll([
       './', './index.html', './style.css',
-      './script.js', './chess-pro.js', './chess-pro-ui.js', './legion-beacon.js'
+      './script.js', './chess-pro.js', './chess-pro-ui.js', './go-tsumego.js', './legion-beacon.js'
     ])).then(() => self.skipWaiting())
   );
 });
