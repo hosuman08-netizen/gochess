@@ -8,7 +8,7 @@ let chessBoard = []; // 8x8
 let chessCurrentPlayer = 'w';
 let gameLog = [];
 let fusionBuff = { goBonus: 0, chessPower: 0 }; // chessPower now level number for real buff
-// Da Vinci + full-cheat + ALWAYS (Morpheus/legion-agent-orchestrator): fusion = Vitruvian anatomy cross-buffs (proportions = power). Cast p5 synergy. Notebook insights auto. Variable near-miss FOMO limited plays. Sense UI.
+// Fusion cross-buffs: chess success feeds Go stone bonuses and Go territory feeds chess power. Study insights auto-recorded. Limited daily fusion plays for pacing.
 let puzzleActive = false;
 let puzzleSolution = null; // {from:[x,y], to:[x,y], type:'capture'}
 // Legion FOMO fusion window
