@@ -119,13 +119,35 @@ function getStreak() {
     return raw ? JSON.parse(raw) : { lastDate: null, count: 0, days: 0 };
   } catch { return { lastDate: null, count: 0, days: 0 }; }
 }
+function p4DayKey(offset) {
+  const d = new Date(Date.now() + (offset || 0) * 86400000);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
 function updateStreakOnPlay() {
-  const today = new Date().toISOString().slice(0,10);
+  const today = p4DayKey(0);
   let s = getStreak();
   const isNewDay = (s.lastDate !== today);
   if (isNewDay) {
-    // new day — FOMO reset
-    const yest = new Date(Date.now() - 86400000).toISOString().slice(0,10);
+    const yest = p4DayKey(-1);
+    const y2 = p4DayKey(-2);
+    let froze = false;
+    // Duolingo freeze: 1 missed day once/7d if days≥3
+    if (s.lastDate && s.lastDate !== yest && s.lastDate === y2 && (s.days || 0) >= 3) {
+      const ready = !s.shieldLast || ((new Date(today) - new Date(s.shieldLast)) / 86400000) >= 7;
+      if (ready) {
+        s.shieldLast = today;
+        s.lastDate = yest;
+        froze = true;
+        try {
+          const tip = document.createElement('div');
+          tip.textContent = '🛡️ 연속 보호막 · ' + s.days + '일 유지';
+          tip.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#16121c;color:#c9a227;padding:10px 16px;border-radius:12px;z-index:9999;font-size:13px;border:1px solid #c9a22755';
+          document.body.appendChild(tip);
+          setTimeout(function () { tip.remove(); }, 3000);
+        } catch (e) {}
+        try { if (window.legionTrack) legionTrack('streak_freeze', { count: s.days }); } catch (e) {}
+      }
+    }
     if (s.lastDate === yest) {
       s.days = (s.days || 0) + 1;
     } else {
@@ -135,6 +157,7 @@ function updateStreakOnPlay() {
     s.count = 1;
     // FOMO fusion window refresh on new day (scarcity daily)
     fusionPlaysLeft = 5;
+    try { if (window.legionTrack) legionTrack('streak', { count: s.days, froze: froze }); } catch (e) {}
   } else {
     s.count = (s.count || 0) + 1;
   }
@@ -148,7 +171,11 @@ function updateStreakOnPlay() {
 function renderStreak() {
   const s = getStreak();
   const el = document.getElementById('streak-display');
-  if (el) el.textContent = `🔥 연속 출석: ${s.days}일 • 오늘 ${s.count}수`;
+  if (!el) return;
+  const today = p4DayKey(0);
+  const shieldReady = !s.shieldLast || ((new Date(today) - new Date(s.shieldLast)) / 86400000) >= 7;
+  el.textContent = `🔥 연속 출석: ${s.days || 0}일 • 오늘 ${s.count || 0}수`
+    + ((s.days || 0) >= 3 && shieldReady ? ' · 🛡️보호 1회' : '');
 }
 
 // --- Mode Switching ---
