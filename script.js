@@ -220,8 +220,52 @@ function renderGo() {
   });
 }
 
+// Liberties of the group containing (x,y) on a given board (0 = would be captured).
+function groupLiberties(board, x, y) {
+  const color = board[y][x];
+  if (!color) return Infinity;
+  const seen = Array(19).fill().map(() => Array(19).fill(false));
+  const libs = new Set();
+  const stack = [[x, y]];
+  seen[y][x] = true;
+  while (stack.length) {
+    const [cx, cy] = stack.pop();
+    for (const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+      const nx = cx + dx, ny = cy + dy;
+      if (nx < 0 || nx >= 19 || ny < 0 || ny >= 19) continue;
+      const v = board[ny][nx];
+      if (v === 0) libs.add(nx + ',' + ny);
+      else if (v === color && !seen[ny][nx]) { seen[ny][nx] = true; stack.push([nx, ny]); }
+    }
+  }
+  return libs.size;
+}
+
+// Would placing `color` at (x,y) be an illegal suicide? (captures nothing AND
+// the resulting own group has no liberties). Tests on a copy — no mutation.
+function isSuicideGo(x, y, color) {
+  if (goBoard[y][x] !== 0) return true;
+  const b = goBoard.map(r => r.slice());
+  b[y][x] = color;
+  const opp = color === 1 ? 2 : 1;
+  // Remove any opponent group left with zero liberties (this move captures it).
+  let capturedAny = false;
+  for (const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+    const nx = x + dx, ny = y + dy;
+    if (nx < 0 || nx >= 19 || ny < 0 || ny >= 19) continue;
+    if (b[ny][nx] === opp && groupLiberties(b, nx, ny) === 0) capturedAny = true;
+  }
+  if (capturedAny) return false; // capturing frees liberties → legal
+  return groupLiberties(b, x, y) === 0;
+}
+
 function placeGoStone(x, y, cell) {
   if (goBoard[y][x] !== 0) return;
+  // Enforce the real suicide rule: reject moves that self-capture with no gain.
+  if (isSuicideGo(x, y, goCurrentPlayer)) {
+    if (typeof showToast === 'function') showToast('자충수(자살수)는 둘 수 없어요 — 활로가 없는 자리입니다.');
+    return;
+  }
 
   goBoard[y][x] = goCurrentPlayer;
   lastGoMove = [x, y];
@@ -875,34 +919,77 @@ function resetChess() {
   autoSave();
 }
 
-// --- GO AI (simple opponent: capture priority + random valid + basic liberty check) Legion upgrade ---
+// --- GO AI — upgraded: real captures, atari pressure, avoids self-atari/suicide,
+//     and plays with contact (near existing stones) instead of scattering blindly. ---
 function aiGoMove() {
   if (goCurrentPlayer !== 2 || puzzleActive) return; // player black=1, AI white
-  const captureMoves = [];
-  const validMoves = [];
+  const moves = [];
+  // Only scan empty points that touch a stone (contact play) plus a sparse
+  // sampling of open points — keeps 19x19 fast while playing sensibly.
+  const board = goBoard;
   for (let y=0; y<19; y++) for (let x=0; x<19; x++) {
-    if (goBoard[y][x] !== 0) continue;
-    // test place
-    goBoard[y][x] = 2;
-    const before = countStonesForColor(1);
-    captureGoGroups(1);
-    const after = countStonesForColor(1);
-    const cap = before - after;
-    goBoard[y][x] = 0; // revert for test (real capture on commit)
-    if (cap > 0) {
-      captureMoves.push({x, y, score: cap*12});
-    } else {
-      const libs = countRoughLiberties(x, y, 2);
-      if (libs > 0) validMoves.push({x, y, score: libs + (Math.random()*1.5)});
+    if (board[y][x] !== 0) continue;
+    // Skip suicidal points entirely (would self-capture for no gain).
+    if (isSuicideGo(x, y, 2)) continue;
+
+    // Test on a copy so heuristics are exact and side-effect free.
+    const b = board.map(r => r.slice());
+    b[y][x] = 2;
+    // Resolve captures of black on the copy.
+    let captured = 0;
+    for (const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+      const nx=x+dx, ny=y+dy;
+      if (nx<0||nx>=19||ny<0||ny>=19) continue;
+      if (b[ny][nx]===1 && groupLiberties(b, nx, ny)===0) {
+        // flood-remove that black group, counting stones
+        const stack=[[nx,ny]];
+        while (stack.length){
+          const [cx,cy]=stack.pop();
+          if (b[cy][cx]!==1) continue;
+          b[cy][cx]=0; captured++;
+          for (const [ex,ey] of [[1,0],[-1,0],[0,1],[0,-1]]){
+            const px=cx+ex, py=cy+ey;
+            if (px>=0&&px<19&&py>=0&&py<19&&b[py][px]===1) stack.push([px,py]);
+          }
+        }
+      }
     }
+
+    // Liberties of our own resulting group (avoid self-atari).
+    const ownLibs = groupLiberties(b, x, y);
+    if (ownLibs === 0) continue; // shouldn't happen (suicide filtered) but guard
+
+    // Atari bonus: does this move reduce an adjacent BLACK group to 1 liberty?
+    let atari = 0;
+    for (const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+      const nx=x+dx, ny=y+dy;
+      if (nx<0||nx>=19||ny<0||ny>=19) continue;
+      if (b[ny][nx]===1 && groupLiberties(b, nx, ny)===1) atari++;
+    }
+
+    // Contact: number of adjacent stones (either color) — reward engaged play.
+    let contact = 0;
+    for (const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+      const nx=x+dx, ny=y+dy;
+      if (nx>=0&&nx<19&&ny>=0&&ny<19 && goBoard[ny][nx]!==0) contact++;
+    }
+
+    let score = captured*15 + atari*4 + Math.min(ownLibs,4)*1.2 + contact*0.9;
+    // Mild center pull early; avoid the very first-line edges when scattering.
+    const edge = Math.min(x, 18-x) + Math.min(y, 18-y);
+    if (edge >= 2) score += 0.5;
+    // Penalize self-atari (own group left with a single liberty) heavily.
+    if (ownLibs === 1 && captured === 0) score -= 6;
+    score += Math.random()*0.8; // small variety, never overriding a capture
+    moves.push({x, y, score});
   }
+
   let chosen = null;
-  if (captureMoves.length) {
-    captureMoves.sort((a,b)=> b.score - a.score);
-    chosen = captureMoves[0];
-  } else if (validMoves.length) {
-    validMoves.sort((a,b)=> b.score - a.score);
-    chosen = validMoves[0]; // top biased
+  if (moves.length) {
+    moves.sort((a,b)=> b.score - a.score);
+    // pick among near-top for slight non-determinism
+    const top = moves.filter(m => m.score >= moves[0].score - 0.6);
+    chosen = top[Math.floor(Math.random()*top.length)];
   }
   if (!chosen) {
     goCurrentPlayer = 1;
