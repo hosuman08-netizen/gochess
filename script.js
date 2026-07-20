@@ -1631,3 +1631,14 @@ window.onload = () => {
   updateFusionBuffsUI(); // always init Legion buffs display
   console.log('%c[GoChess] 로드 완료.', 'color:#4a9eff');
 };
+// 3H Duolingo gochess daily
+(function dailyFocusGochess(){
+  try {
+    var k = 'gochess_focus_' + new Date().toISOString().slice(0,10);
+    if (localStorage.getItem(k)) return;
+    localStorage.setItem(k,'1');
+    setTimeout(function(){
+      try { if (window.legionTrack) legionTrack('daily_focus',{}); } catch(e){}
+    }, 600);
+  } catch(e){}
+})();
