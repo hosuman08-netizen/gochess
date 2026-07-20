@@ -14,6 +14,7 @@ let puzzleSolution = null; // {from:[x,y], to:[x,y], type:'capture'}
 // Legion FOMO fusion window
 let fusionPlaysLeft = 5;
 let goPassCount = 0; // for simple end game scoring
+let lastGoMove = null; // [x,y] of the most recently placed stone (marker so AI reply is visible)
 
 // === p6 Lung Surprise Eye + Ache-Breath + 창발 DNA (cross full implant) ===
 // p6 breath = game tension phase. spore.wound = near-miss / loss ache history.
@@ -211,7 +212,9 @@ function renderGo() {
     const val = goBoard[y][x];
     if (val) {
       const stone = document.createElement('div');
-      stone.className = `stone ${val === 1 ? 'black' : 'white'}`;
+      let cls = `stone ${val === 1 ? 'black' : 'white'}`;
+      if (lastGoMove && lastGoMove[0] === x && lastGoMove[1] === y) cls += ' last-go';
+      stone.className = cls;
       cell.appendChild(stone);
     }
   });
@@ -221,6 +224,7 @@ function placeGoStone(x, y, cell) {
   if (goBoard[y][x] !== 0) return;
 
   goBoard[y][x] = goCurrentPlayer;
+  lastGoMove = [x, y];
   gameLog.push({mode: 'go', x, y, player: goCurrentPlayer});
 
   // Simple capture + log
@@ -388,6 +392,7 @@ function passGo() {
 function resetGo() {
   goBoard = Array(19).fill().map(() => Array(19).fill(0));
   goCurrentPlayer = 1;
+  lastGoMove = null;
   fusionBuff.goBonus = 0;
   goPassCount = 0;
   if (typeof hideShareBanner === 'function') hideShareBanner();
@@ -440,16 +445,31 @@ function initChess(keepLoaded = false) {
 
 function renderChess() {
   const cells = document.querySelectorAll('#chess-grid .cell');
+  // Which king (if any) is currently in check → glow it red
+  const checkedColor = isInCheck(chessBoard, chessCurrentPlayer) ? chessCurrentPlayer : null;
+  const checkedKingPos = checkedColor ? findKing(chessBoard, checkedColor) : null;
   cells.forEach(cell => {
     const x = +cell.dataset.x;
     const y = +cell.dataset.y;
     cell.innerHTML = '';
-    cell.classList.remove('buffed');
+    cell.classList.remove('buffed', 'selected', 'move-hint', 'capture-hint', 'last-move', 'in-check');
     const piece = chessBoard[y][x];
     if (piece) {
       cell.textContent = PIECE_SYMBOLS[piece] || '?';
       cell.style.color = piece[0] === 'w' ? '#fff' : '#222';
     }
+    // Selected piece
+    if (selected && selected[0] === x && selected[1] === y) cell.classList.add('selected');
+    // Legal-move hints for the selected piece (dot on empty, ring on capture)
+    const hint = legalTargets.find(t => t.x === x && t.y === y);
+    if (hint) cell.classList.add(hint.capture ? 'capture-hint' : 'move-hint');
+    // Last-move trail (from + to)
+    if (lastChessMove) {
+      const [fx, fy] = lastChessMove.from, [ttx, tty] = lastChessMove.to;
+      if ((fx === x && fy === y) || (ttx === x && tty === y)) cell.classList.add('last-move');
+    }
+    // King in check
+    if (checkedKingPos && checkedKingPos[0] === x && checkedKingPos[1] === y) cell.classList.add('in-check');
     // Real buff UI: highlight potential power squares when chessBuff active (live cross)
     if (fusionBuff.chessPower > 0 && piece && piece[0] === chessCurrentPlayer) {
       cell.classList.add('buffed');
@@ -461,6 +481,21 @@ function renderChess() {
 }
 
 let selected = null;
+let legalTargets = [];        // [{x,y,capture}] destinations for the selected piece
+let lastChessMove = null;     // {from:[x,y], to:[x,y]} — trail of the most recent move
+
+// Every legal destination for the piece at (sx,sy), for on-board hinting.
+function targetsForPiece(sx, sy) {
+  const piece = chessBoard[sy] && chessBoard[sy][sx];
+  if (!piece || piece[0] !== chessCurrentPlayer) return [];
+  const out = [];
+  for (let ty = 0; ty < 8; ty++) for (let tx = 0; tx < 8; tx++) {
+    if (isLegalChessMove(chessBoard, sx, sy, tx, ty, piece[0])) {
+      out.push({ x: tx, y: ty, capture: !!chessBoard[ty][tx] });
+    }
+  }
+  return out;
+}
 
 function handleChessClick(x, y, cell) {
   if (chessGameOver) return; // no play after checkmate/stalemate until reset
@@ -469,6 +504,7 @@ function handleChessClick(x, y, cell) {
   if (selected) {
     const [sx, sy] = selected;
     if (isValidChessMove(sx, sy, x, y)) {
+      lastChessMove = { from: [sx, sy], to: [x, y] };
       const target = chessBoard[y][x];
       const movedPiece = chessBoard[sy][sx];
       chessBoard[y][x] = movedPiece;
@@ -485,6 +521,7 @@ function handleChessClick(x, y, cell) {
       }
       chessCurrentPlayer = chessCurrentPlayer === 'w' ? 'b' : 'w';
       selected = null;
+      legalTargets = [];
       renderChess();
       // Real game-state judgment for the side now to move
       if (evaluateChessEnd()) { updateStreakOnPlay(); autoSave(); return; }
@@ -513,14 +550,21 @@ function handleChessClick(x, y, cell) {
       }
       updateFusionBuffsUI();
       setTimeout(aiChessMove, 500); // AI turn
+    } else if (piece && piece[0] === chessCurrentPlayer) {
+      // Clicked another of own pieces → reselect it (show its hints)
+      selected = [x, y];
+      legalTargets = targetsForPiece(x, y);
+      renderChess();
     } else {
+      // Clicked an illegal square → deselect
       selected = null;
+      legalTargets = [];
       renderChess();
     }
   } else if (piece && piece[0] === chessCurrentPlayer) {
     selected = [x, y];
+    legalTargets = targetsForPiece(x, y);
     renderChess();
-    cell.classList.add('selected');
   }
 }
 
@@ -765,6 +809,7 @@ function aiChessMove() {
   chessBoard[ty][tx] = moved;
   chessBoard[sy][sx] = '';
   if (moved[1] === 'p' && (ty === 0 || ty === 7)) chessBoard[ty][tx] = 'bq'; // AI promotes
+  lastChessMove = { from: [sx, sy], to: [tx, ty] }; // show the AI's reply on the board
   if (target) gameLog.push({mode: 'chess', action: 'capture', piece: target, by: 'b'});
   gameLog.push({mode: 'chess', from: [sx,sy], to: [tx,ty], capture: !!target, ai: true});
   chessCurrentPlayer = 'w';
@@ -815,6 +860,9 @@ function evaluateChessEnd() {
 function resetChess() {
   chessBoard = []; // force fresh starting position
   chessGameOver = false;
+  selected = null;
+  legalTargets = [];
+  lastChessMove = null;
   if (typeof hideShareBanner === 'function') hideShareBanner();
   initChess();
   fusionBuff.chessPower = 0;
@@ -862,6 +910,7 @@ function aiGoMove() {
     updateStatus(); autoSave(); return;
   }
   goBoard[chosen.y][chosen.x] = 2;
+  lastGoMove = [chosen.x, chosen.y];
   gameLog.push({mode:'go', x:chosen.x, y:chosen.y, player:2, ai:true});
   const bef = countStones();
   captureGoGroups(1);
