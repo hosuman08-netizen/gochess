@@ -1676,3 +1676,17 @@ window.onload = () => {
     }, 400);
   } catch(e){}
 })();
+
+// GG daily board FOMO
+(function(){try{
+  var k="gochess_gg_"+new Date().toISOString().slice(0,10);
+  if(sessionStorage.getItem(k))return; sessionStorage.setItem(k,"1");
+  setTimeout(function(){
+    var el=document.createElement("div");
+    el.style.cssText="position:fixed;bottom:12px;left:50%;transform:translateX(-50%);background:#1a1520;color:#fbbf24;padding:8px 14px;border-radius:10px;font-size:12px;z-index:9998;border:1px solid #c9a227";
+    el.textContent="♟ 오늘 한 판 — 스트릭 유지";
+    document.body.appendChild(el);
+    setTimeout(function(){el.remove();},4000);
+    if(window.legionTrack)legionTrack("gg_daily_board",{});
+  },1200);
+}catch(e){}})();
