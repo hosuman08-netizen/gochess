@@ -98,6 +98,16 @@
       <div class="hint">매 게임 후 자동 인사이트 2-3개 + 개인 깨달음을 기록해 실력을 키워보세요.</div>
     </div>
 
+    <!-- 결과 공유 배너 (승리/무승부/퍼즐완료 시 노출) -->
+    <div id="share-banner" class="share-banner hidden">
+      <span id="share-headline" class="share-headline">🎉 결과가 나왔어요!</span>
+      <div class="share-actions">
+        <button id="share-btn" class="share-btn primary">결과 공유</button>
+        <button id="share-x-btn" class="share-btn" aria-label="X(트위터)에 공유">𝕏 로 공유</button>
+        <button class="share-btn ghost" onclick="hideShareBanner()">닫기</button>
+      </div>
+    </div>
+
     <footer>
       <div class="legion-note">
         자동 저장 + 연속 출석 + 퍼즐 기록 • 공부 모드에서 자동 인사이트 2-3개 + 개인 깨달음<br>

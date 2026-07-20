@@ -280,6 +280,80 @@ header h1 {
 
 .mini-board { margin: 0 auto; cursor: default; }
 
+/* --- 결과 공유 배너 (바이럴 루프) — 눈에 띄되 절제 --- */
+.share-banner {
+  margin: var(--s5) auto 0;
+  max-width: 520px;
+  padding: var(--s4) var(--s5);
+  background: var(--surface);
+  border: 1px solid var(--accent);
+  border-radius: var(--r);
+  text-align: center;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.35);
+  animation: share-rise 220ms ease-out;
+}
+@keyframes share-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.share-headline {
+  display: block;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: var(--s3);
+}
+.share-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  justify-content: center;
+}
+.share-btn {
+  padding: var(--s2) var(--s4);
+  border-radius: var(--r);
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 160ms ease-out, border-color 160ms ease-out, transform 120ms ease-out;
+}
+.share-btn:hover { background: var(--accent-soft); border-color: var(--accent); }
+.share-btn:active { transform: translateY(1px); }
+/* 주 공유 버튼만 accent — 시선 하나 */
+.share-btn.primary {
+  background: var(--accent);
+  color: #06101f;
+  font-weight: 600;
+  border-color: transparent;
+}
+.share-btn.primary:hover { background: #63acff; }
+.share-btn.ghost {
+  background: transparent;
+  color: var(--ink-dim);
+}
+.share-btn.ghost:hover { color: var(--ink); background: transparent; }
+
+/* 복사됨 토스트 */
+.gc-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  transform: translateX(-50%) translateY(12px);
+  background: var(--surface-2);
+  color: var(--ink);
+  border: 1px solid var(--accent);
+  padding: var(--s2) var(--s4);
+  border-radius: var(--r);
+  font-size: 0.85rem;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 200ms ease-out, transform 200ms ease-out;
+  z-index: 1000;
+  max-width: 90vw;
+}
+.gc-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
 #study-content {
   background: #0e1119;
   color: #7fd88f;

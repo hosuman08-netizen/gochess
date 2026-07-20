@@ -373,6 +373,11 @@ function passGo() {
       `중립(공배): ${r.neutral}\n\n` +
       `결과: ${winner === '무승부' ? '무승부' : winner + ' 승'} (차이 ${Math.abs(r.diff).toFixed(1)}집)`
     );
+    if (winner === '무승부') {
+      showShareBanner('go-draw', { diff: r.diff }, '바둑 종료 — 무승부');
+    } else {
+      showShareBanner('go-win', { winner, diff: r.diff }, `바둑 종료 — ${winner} 승`);
+    }
     goPassCount = 0;
     setTimeout(endGameAndStudy, 300);
   }
@@ -385,6 +390,7 @@ function resetGo() {
   goCurrentPlayer = 1;
   fusionBuff.goBonus = 0;
   goPassCount = 0;
+  if (typeof hideShareBanner === 'function') hideShareBanner();
   // Preserve gameLog for ALWAYS LEARNING across resets (insights accumulate)
   renderGo();
   renderFusionMiniGo();
@@ -785,6 +791,7 @@ function evaluateChessEnd() {
     updateStatus(`체크메이트! ${winnerKo} 승리 — ${sideKo} 킹이 잡혔습니다. (초기화로 재시작)`);
     autoSave();
     setTimeout(() => alert(`♚ 체크메이트! ${winnerKo}의 승리입니다.\n${sideKo}은(는) 킹을 지킬 합법 수가 없습니다.\n초기화 버튼으로 새 게임을 시작하세요.`), 80);
+    showShareBanner('chess-win', { margin: 'checkmate', winner: winnerKo }, `♚ 체크메이트! ${winnerKo} 승리`);
     setTimeout(endGameAndStudy, 400);
     return true;
   }
@@ -794,6 +801,7 @@ function evaluateChessEnd() {
     updateStatus(`스테일메이트 — 무승부. ${sideKo}은(는) 체크가 아니지만 둘 수가 없습니다.`);
     autoSave();
     setTimeout(() => alert(`½ 스테일메이트 (무승부).\n${sideKo}은(는) 체크 상태는 아니지만 합법적인 수가 하나도 없습니다.`), 80);
+    showShareBanner('chess-draw', {}, '½ 스테일메이트 — 무승부');
     setTimeout(endGameAndStudy, 400);
     return true;
   }
@@ -807,6 +815,7 @@ function evaluateChessEnd() {
 function resetChess() {
   chessBoard = []; // force fresh starting position
   chessGameOver = false;
+  if (typeof hideShareBanner === 'function') hideShareBanner();
   initChess();
   fusionBuff.chessPower = 0;
   puzzleActive = false;
@@ -1180,6 +1189,7 @@ function checkPuzzleSolution(from, to) {
     alert(`✅ 퍼즐 성공! 연속 출석 보너스 +1. 오늘 ${s.count}수. 포획 기회를 잘 포착했어요!`);
     gameLog.push({mode:'puzzle', solved: true, ts: Date.now()});
     autoSave();
+    showShareBanner('puzzle', {}, '✅ 오늘의 퍼즐 클리어!');
     // Reset to normal play board after solve (or keep)
     setTimeout(() => {
       if (currentMode === 'chess') initChess();
@@ -1334,6 +1344,129 @@ function applyVitruvianProportion(el) {
   if (!el) return;
   el.style.width = '61.8%';
   el.style.margin = '0 auto';
+}
+
+// ============================================================
+// 결과 공유 (바이럴 루프) — 유저용 깔끔한 공유 기능
+// navigator.share(모바일 네이티브) → 실패시 클립보드 복사 + 토스트.
+// 텍스트: 결과 요약 + 호기심 훅 + URL + 해시태그. 정직·친구톤·엔터테인먼트.
+// 내부 크로스로직(p6/fusion 등)은 건드리지 않고, 유저 공유는 여기 신규 함수만 사용.
+// ============================================================
+const GOCHESS_URL = 'https://hosuman08-netizen.github.io/gochess/';
+
+// 결과별 매력적인 공유 문안 생성 (과장·가짜수치 없이, 실제 결과만 요약)
+function buildShareText(kind, data = {}) {
+  data = data || {};
+  const s = getStreak();
+  const streakTail = (s.days > 1) ? ` (🔥 연속 ${s.days}일째)` : '';
+  let line;
+  switch (kind) {
+    case 'chess-win':
+      line = `체스에서 ${data.margin === 'checkmate' ? '체크메이트로 한 판 이겼다' : '한 판 이겼다'}! 바둑이랑 체스를 한 화면에서 두는 게임인데 은근 중독됨.`;
+      break;
+    case 'go-win': {
+      const who = data.winner ? `${data.winner} 승` : '한 판 마무리';
+      const diff = (data.diff != null) ? ` (${Math.abs(data.diff).toFixed(1)}집 차)` : '';
+      line = `바둑 한 판 끝! 결과는 ${who}${diff}. 바둑+체스를 같이 두는 게임 발견했는데 판 짜는 재미가 있다.`;
+      break;
+    }
+    case 'go-draw':
+      line = `바둑 한 판 무승부로 끝! 아슬아슬했다. 바둑이랑 체스를 한 화면에서 두는 게임.`;
+      break;
+    case 'chess-draw':
+      line = `체스 스테일메이트 무승부! 킹 하나 못 움직여서 비겼다. 바둑+체스 한 판 게임.`;
+      break;
+    case 'puzzle':
+      line = `오늘의 퍼즐 클리어! 한 수로 상대 기물 포획하는 문제였다. 매일 새 퍼즐 나옴.`;
+      break;
+    default:
+      line = `바둑이랑 체스를 한 화면에서 두는 웹 게임 발견. 설치 없이 바로 됨.`;
+  }
+  const hashtags = { 'chess-win':'#체스 #바둑', 'chess-draw':'#체스', 'go-win':'#바둑', 'go-draw':'#바둑', 'puzzle':'#퍼즐 #체스' }[kind] || '#바둑 #체스';
+  return `${line}${streakTail}\n너도 해봐 → ${GOCHESS_URL} ${hashtags}`;
+}
+
+// 가벼운 토스트 (복사됨 등). 자동 소멸, 되돌림 불필요.
+function showToast(msg) {
+  let t = document.getElementById('gc-toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'gc-toast';
+    t.className = 'gc-toast';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(showToast._timer);
+  showToast._timer = setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// 클립보드 복사 (navigator.share 실패/미지원시 폴백)
+async function copyShareText(text) {
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(text);
+      showToast('공유 문구가 복사됐어요 · 붙여넣기 하면 끝!');
+      return true;
+    }
+  } catch (e) { /* fall through to legacy */ }
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;top:-1000px;left:-1000px;';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('공유 문구가 복사됐어요 · 붙여넣기 하면 끝!');
+    return true;
+  } catch (e) {
+    showToast('복사에 실패했어요. 문구를 길게 눌러 직접 복사해 주세요.');
+    return false;
+  }
+}
+
+// 유저용 결과 공유: 네이티브 공유 우선 → 실패시 복사 + 토스트
+async function shareResult(kind, data = {}) {
+  const text = buildShareText(kind, data);
+  try { if (window.legionTrack) window.legionTrack('share'); } catch (e) {}
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: 'GoChess', text, url: GOCHESS_URL });
+      return;
+    } catch (e) {
+      // 사용자가 취소한 경우엔 아무것도 안 함 (복사 폴백 생략)
+      if (e && e.name === 'AbortError') return;
+      // 그 외 실패는 복사로 폴백
+    }
+  }
+  await copyShareText(text);
+}
+
+// X(트위터) 인텐트 — 옵션 공유 경로
+function shareResultToX(kind, data = {}) {
+  const text = buildShareText(kind, data);
+  try { if (window.legionTrack) window.legionTrack('share_x'); } catch (e) {}
+  const url = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(text);
+  window.open(url, '_blank', 'noopener,noreferrer');
+}
+
+// 결과 배너를 띄워 공유 버튼 노출 (승리/무승부/퍼즐완료 공통)
+function showShareBanner(kind, data = {}, headline) {
+  const banner = document.getElementById('share-banner');
+  const head = document.getElementById('share-headline');
+  const shareBtn = document.getElementById('share-btn');
+  const xBtn = document.getElementById('share-x-btn');
+  if (!banner || !shareBtn) return;
+  if (head && headline) head.textContent = headline;
+  shareBtn.onclick = () => shareResult(kind, data);
+  if (xBtn) xBtn.onclick = () => shareResultToX(kind, data);
+  banner.classList.remove('hidden');
+}
+
+function hideShareBanner() {
+  const banner = document.getElementById('share-banner');
+  if (banner) banner.classList.add('hidden');
 }
 
 // Boot - load first for persistence + edge cases
