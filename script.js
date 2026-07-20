@@ -425,6 +425,7 @@ function passGo() {
       showShareBanner('go-draw', { diff: r.diff }, '바둑 종료 — 무승부');
     } else {
       try { if (window.legionTrack) window.legionTrack('activate'); } catch (e) {}
+    try { if (!window._peakWinShare) { window._peakWinShare=1; setTimeout(function(){ var b=document.getElementById('share-btn'); if(b){ b.style.outline='2px solid #c9a227'; } if(window.legionTrack)legionTrack('peak_win_share',{}); },800);} } catch(e){}
       showShareBanner('go-win', { winner, diff: r.diff }, `바둑 종료 — ${winner} 승`);
     }
     goPassCount = 0;
@@ -1567,6 +1568,8 @@ async function copyShareText(text) {
 
 // 유저용 결과 공유: 네이티브 공유 우선 → 실패시 복사 + 토스트
 async function shareResult(kind, data = {}) {
+  // 3H gochess peak tracked
+  try { if (window.legionTrack) legionTrack('share_peak', {kind: kind}); } catch (e) {}
   const text = buildShareText(kind, data);
   try { if (window.legionTrack) window.legionTrack('share'); } catch (e) {}
   if (navigator.share) {
