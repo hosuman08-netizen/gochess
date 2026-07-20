@@ -1642,3 +1642,24 @@ window.onload = () => {
     }, 600);
   } catch(e){}
 })();
+
+// 3H Duolingo mini-streak for gochess
+(function gochessStreak3H(){
+  try {
+    var day = new Date().toISOString().slice(0,10);
+    var last = localStorage.getItem('gochess_streak_day');
+    var n = parseInt(localStorage.getItem('gochess_streak')||'0',10);
+    if (last !== day) {
+      var y = new Date(Date.now()-864e5).toISOString().slice(0,10);
+      n = (last === y) ? n+1 : 1;
+      localStorage.setItem('gochess_streak_day', day);
+      localStorage.setItem('gochess_streak', String(n));
+    }
+    setTimeout(function(){
+      var bar = document.createElement('div');
+      bar.style.cssText='text-align:center;font-size:12px;color:#fbbf24;padding:4px;';
+      bar.textContent='🔥 '+n+' day streak — one game today';
+      if (document.body) document.body.insertBefore(bar, document.body.firstChild);
+    }, 400);
+  } catch(e){}
+})();
