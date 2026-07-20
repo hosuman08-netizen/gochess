@@ -413,3 +413,146 @@ header h1 {
   max-height: 320px;
   overflow: auto;
 }
+
+/* ============================================================
+   CHESS PRO — 전문 체스 UI. 보드가 주인공, 나머지는 조용히.
+   8px 스케일 · accent(파랑)는 주 액션 한 곳 · warn(금)은 러시/FOMO만.
+   ============================================================ */
+#chess-pro { max-width: 416px; margin: var(--s3) auto 0; }
+.cp-dim { color: var(--ink-dim); }
+
+/* 상단: 레이팅 뱃지 · 상대 셀렉트 · 새 대국 */
+.cp-top {
+  display: flex; align-items: center; gap: var(--s2);
+  flex-wrap: wrap; margin-bottom: var(--s2);
+}
+.cp-rating {
+  font-size: 0.82rem; color: var(--ink); flex: 1 1 auto;
+  display: flex; align-items: baseline; gap: 6px;
+}
+.cp-rating b { font-size: 1.05rem; }
+.cp-rank {
+  background: var(--surface-2); color: var(--accent);
+  border: 1px solid var(--line); border-radius: 999px;
+  padding: 1px 9px; font-size: 0.72rem; font-weight: 600;
+}
+.cp-oppL { font-size: 0.72rem; color: var(--ink-dim); display: flex; align-items: center; gap: 4px; }
+.cp-select {
+  background: var(--surface-2); color: var(--ink);
+  border: 1px solid var(--line); border-radius: 6px;
+  padding: 5px 8px; font-size: 0.78rem; cursor: pointer;
+}
+
+/* 오프닝 라인 */
+.cp-opening {
+  font-size: 0.8rem; color: var(--ink);
+  padding: var(--s2) var(--s3); margin-bottom: var(--s2);
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r);
+  min-height: 34px; display: flex; align-items: center;
+}
+.cp-eco { color: var(--ink-dim); font-size: 0.7rem; letter-spacing: 0.03em; margin-left: 4px; }
+
+/* 형세 평가 바 — 얇게, 흑↔백 */
+.cp-evalbar {
+  position: relative; height: 8px; border-radius: 999px;
+  background: var(--stone-black); overflow: hidden;
+  margin-bottom: var(--s3); border: 1px solid var(--line);
+}
+.cp-eval-fill {
+  position: absolute; left: 0; top: 0; bottom: 0; width: 50%;
+  background: linear-gradient(90deg, #d9dbe2, var(--stone-white));
+  transition: width 260ms ease-out;
+}
+.cp-eval-num {
+  position: absolute; right: 6px; top: -18px;
+  font-size: 0.68rem; color: var(--ink-dim); font-variant-numeric: tabular-nums;
+}
+
+/* 툴바 버튼 */
+.cp-toolbar { display: flex; gap: var(--s2); flex-wrap: wrap; margin-bottom: var(--s2); }
+.cp-btn {
+  flex: 1 1 auto; min-width: 68px;
+  background: var(--surface-2); color: var(--ink);
+  border: 1px solid var(--line); border-radius: var(--r);
+  padding: var(--s2) var(--s3); font-size: 0.82rem; cursor: pointer;
+  transition: background 160ms ease-out, border-color 160ms ease-out, transform 120ms ease-out;
+}
+.cp-btn:hover { background: var(--accent-soft); border-color: var(--accent); }
+.cp-btn:active { transform: translateY(1px); }
+.cp-btn.cp-accent { background: var(--accent); color: #06101f; font-weight: 600; border-color: transparent; }
+.cp-btn.cp-accent:hover { background: #63acff; }
+@keyframes cp-flash-k { 0%,100% { box-shadow: 0 0 0 0 rgba(74,158,255,0); } 50% { box-shadow: 0 0 0 3px rgba(74,158,255,0.55); } }
+.cp-flash { animation: cp-flash-k 800ms ease-out 2; }
+
+/* 힌트 하이라이트 */
+.chess-grid .cell.cp-hint { box-shadow: inset 0 0 0 3px rgba(74,158,255,0.85); }
+
+/* 패널 (리뷰/퍼즐) */
+.cp-panel {
+  margin-top: var(--s3); padding: var(--s3) var(--s4);
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r);
+  animation: share-rise 200ms ease-out;
+}
+.cp-panel-h {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 0.9rem; font-weight: 600; color: var(--ink); margin-bottom: var(--s2);
+}
+.cp-x { background: none; border: none; color: var(--ink-dim); cursor: pointer; font-size: 0.9rem; padding: 2px 6px; }
+.cp-x:hover { color: var(--ink); }
+
+/* 리뷰 결과 */
+.cp-acc { display: flex; gap: var(--s3); margin-bottom: var(--s2); }
+.cp-acc-box {
+  flex: 1; text-align: center; padding: var(--s2);
+  background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r);
+  display: flex; flex-direction: column; gap: 2px;
+}
+.cp-acc-box b { font-size: 1.3rem; color: var(--accent); }
+.cp-acc-box span { font-size: 0.7rem; }
+.cp-tags { font-size: 0.76rem; color: var(--ink-dim); margin-bottom: var(--s2); }
+.cp-b-mist { color: var(--warn); }
+.cp-b-blun { color: #e0645a; }
+.cp-movelist { display: flex; flex-wrap: wrap; gap: 4px; max-height: 180px; overflow-y: auto; }
+.cp-mv { display: inline-flex; align-items: center; gap: 3px; font-size: 0.76rem; }
+.cp-mv-n { color: var(--ink-dim); min-width: 16px; }
+.cp-badge { padding: 1px 6px; border-radius: 5px; font-variant-numeric: tabular-nums; background: var(--surface-2); border: 1px solid var(--line); }
+.cp-best { border-color: #3a7d4c; color: #7fd88f; }
+.cp-good { color: var(--ink); }
+.cp-inacc { color: #d9c07a; border-color: #6a5a2a; }
+.cp-mist { color: var(--warn); border-color: #6a4a1a; }
+.cp-blun { color: #f0857a; border-color: #7a2f28; }
+.cp-better { color: var(--accent); font-size: 0.72rem; }
+
+/* 퍼즐 */
+.cp-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: var(--s2); }
+.cp-chip {
+  background: var(--surface-2); color: var(--ink-dim);
+  border: 1px solid var(--line); border-radius: 999px;
+  padding: 3px 11px; font-size: 0.74rem; cursor: pointer;
+  transition: color 140ms ease-out, border-color 140ms ease-out;
+}
+.cp-chip:hover { color: var(--ink); }
+.cp-chip.on { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+.cp-puz-title { font-size: 0.86rem; margin-bottom: 4px; }
+.cp-puz-fb { font-size: 0.8rem; color: var(--ink-dim); min-height: 20px; margin-bottom: var(--s2); }
+.cp-puz-fb.ok { color: #7fd88f; }
+.cp-puz-fb.no { color: #f0857a; }
+.cp-rush-status { font-size: 0.78rem; color: var(--warn); font-weight: 600; min-height: 18px; margin-bottom: 4px; }
+
+/* 승진 모달 */
+.cp-promo {
+  position: fixed; inset: 0; z-index: 1200;
+  background: rgba(6,10,20,0.72); display: flex; align-items: center; justify-content: center;
+}
+.cp-promo-box {
+  background: var(--surface); border: 1px solid var(--accent); border-radius: var(--r);
+  padding: var(--s4) var(--s5); text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+}
+.cp-promo-t { font-size: 0.9rem; color: var(--ink); margin-bottom: var(--s3); }
+.cp-promo-row { display: flex; gap: var(--s2); }
+.cp-promo-row button {
+  width: 56px; height: 56px; font-size: 34px; cursor: pointer;
+  background: var(--surface-2); color: var(--ink); border: 1px solid var(--line); border-radius: var(--r);
+  transition: background 140ms ease-out, transform 120ms ease-out;
+}
+.cp-promo-row button:hover { background: var(--accent-soft); border-color: var(--accent); transform: translateY(-2px); }
