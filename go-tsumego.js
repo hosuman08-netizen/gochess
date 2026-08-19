@@ -417,6 +417,8 @@
     '.tp-tip{color:var(--ink-dim);font-size:0.76rem;text-align:center;margin-bottom:var(--s2);line-height:1.5;}',
     '.tp-tools{display:flex;gap:var(--s2);flex-wrap:wrap;justify-content:center;}',
     '.tp-solved{color:#7fd88f;font-size:0.74rem;}',
+    '.tp-elo{color:var(--ink-dim);font-size:0.72rem;margin:0 0 var(--s2);}',
+    '.tp-elo b{color:var(--accent);}',
     '.tp-note{color:#666;font-size:0.68rem;text-align:center;margin-top:var(--s3);line-height:1.5;}'
   ].join('');
 
@@ -427,7 +429,39 @@
   }
 
   var THEMES = ['전체', '단수', '축(莊)', '장문(藏門)', '치중(置中)', '촉촉수', '수상전', '궁도(宮圖)', '오답복습'];
-  var T = { theme: '전체', prob: null, board: null, N: 0, target: null, depth: 6, busy: false, done: false, lastMove: null };
+  var BANDS = [
+    { id: 'all', t: '전체 난도' },
+    { id: 'easy', t: '초급 ≤700' },
+    { id: 'mid', t: '중급' },
+    { id: 'hard', t: '상급 ≥1000' }
+  ];
+  var T = { theme: '전체', band: 'all', rated: false, prob: null, board: null, N: 0, target: null, depth: 6, busy: false, done: false, lastMove: null };
+
+  /* WAVE43: 사활 Elo 밴드. 기존 RAW만. 가짜 문항 0. 이 기기 Elo. */
+  function tsumegoElo() {
+    try { var r = JSON.parse(localStorage.getItem('gc-tsumego-elo') || 'null'); return r || { elo: 800, n: 0, ok: 0 }; }
+    catch (e) { return { elo: 800, n: 0, ok: 0 }; }
+  }
+  function bumpTsumegoElo(win, pRating) {
+    var r = tsumegoElo();
+    var K = r.n < 20 ? 32 : 20;
+    var E = 1 / (1 + Math.pow(10, ((pRating || 800) - r.elo) / 400));
+    r.elo = Math.max(400, Math.min(2000, Math.round(r.elo + K * ((win ? 1 : 0) - E))));
+    r.n++; if (win) r.ok++;
+    try { localStorage.setItem('gc-tsumego-elo', JSON.stringify(r)); } catch (e) {}
+    return r;
+  }
+  function renderTsumegoElo() {
+    var el = document.getElementById('tp-elo'); if (!el) return;
+    var r = tsumegoElo();
+    el.innerHTML = '사활 Elo <b>' + r.elo + '</b> · ' + r.ok + '/' + r.n + ' · 로컬 ' + RAW.length + '문항 · 리더보드 없음';
+  }
+  function bandOk(p) {
+    if (T.band === 'easy') return p.rating <= 700;
+    if (T.band === 'mid') return p.rating > 700 && p.rating < 1000;
+    if (T.band === 'hard') return p.rating >= 1000;
+    return true;
+  }
 
   function wrongQ() { try { return JSON.parse(localStorage.getItem('gc-tsumego-wrong') || '[]'); } catch (e) { return []; } }
   function addWrong(id) { var q = wrongQ(); if (q.indexOf(id) < 0) { q.push(id); try { localStorage.setItem('gc-tsumego-wrong', JSON.stringify(q)); } catch (e) {} } }
@@ -436,9 +470,12 @@
   function markSolved(id) { var s = solvedSet(); if (s.indexOf(id) < 0) { s.push(id); try { localStorage.setItem('gc-tsumego-solved', JSON.stringify(s)); } catch (e) {} } }
 
   function pool() {
-    if (T.theme === '오답복습') { var q = wrongQ(); return RAW.filter(function (p) { return q.indexOf(p.id) >= 0; }); }
-    if (T.theme === '전체') return RAW.slice();
-    return RAW.filter(function (p) { return p.theme === T.theme; });
+    var base;
+    if (T.theme === '오답복습') { var q = wrongQ(); base = RAW.filter(function (p) { return q.indexOf(p.id) >= 0; }); }
+    else if (T.theme === '전체') base = RAW.slice();
+    else base = RAW.filter(function (p) { return p.theme === T.theme; });
+    var banded = base.filter(bandOk);
+    return banded.length ? banded : base;
   }
 
   function injectUI() {
@@ -452,7 +489,9 @@
       '<div class="tp-top"><span class="tp-name" id="tp-name">사활 훈련소</span>' +
       '<span class="tp-meta" id="tp-meta"></span>' +
       '<span class="tp-solved" id="tp-solved" style="margin-left:auto"></span></div>' +
+      '<div class="tp-elo" id="tp-elo"></div>' +
       '<div class="tp-chips" id="tp-chips"></div>' +
+      '<div class="tp-chips" id="tp-bands"></div>' +
       '<div class="tp-tip" id="tp-tip"></div>' +
       '<div class="tp-boardwrap"><div class="tp-grid" id="tp-grid"></div></div>' +
       '<div class="tp-fb" id="tp-fb"></div>' +
@@ -489,6 +528,20 @@
     });
     var sv = document.getElementById('tp-solved');
     if (sv) sv.textContent = '해결 ' + solvedSet().length + '/' + RAW.length;
+    renderBands();
+    renderTsumegoElo();
+  }
+
+  function renderBands() {
+    var wrap = document.getElementById('tp-bands'); if (!wrap) return;
+    wrap.innerHTML = '';
+    BANDS.forEach(function (b) {
+      var chip = document.createElement('button');
+      chip.className = 'tp-chip' + (T.band === b.id ? ' on' : '');
+      chip.textContent = b.t;
+      chip.onclick = function () { T.band = b.id; renderBands(); nextProblem(); };
+      wrap.appendChild(chip);
+    });
   }
 
   function pickFrom(list) {
@@ -501,7 +554,10 @@
 
   function nextProblem() {
     var list = pool();
-    if (!list.length) { setFb('이 테마에 문제가 없어요.', ''); T.theme = '전체'; renderChips(); list = pool(); }
+    if (!list.length) { setFb('이 테마에 문제가 없어요.', ''); T.theme = '전체'; T.band = 'all'; renderChips(); list = pool(); }
+    var elo = tsumegoElo().elo;
+    var near = list.filter(function (p) { return Math.abs(p.rating - elo) <= 200; });
+    if (near.length) list = near;
     // 현재 문제 다음의 미해결로 순환
     var idx = T.prob ? list.findIndex(function (p) { return p.id === T.prob.id; }) : -1;
     var chosen = null, solved = solvedSet();
@@ -514,7 +570,7 @@
     if (!p) return;
     var parsed = parse(p.rows);
     T.prob = p; T.board = parsed.board; T.N = parsed.N; T.target = p.target.slice();
-    T.depth = p.depth; T.busy = false; T.done = false; T.lastMove = null;
+    T.depth = p.depth; T.busy = false; T.done = false; T.rated = false; T.lastMove = null;
     var nm = document.getElementById('tp-name'); if (nm) nm.textContent = p.name;
     var mt = document.getElementById('tp-meta'); if (mt) mt.textContent = p.theme + ' · 난도 ' + p.rating + ' · 흑 차례';
     var tip = document.getElementById('tp-tip'); if (tip) tip.textContent = p.tip;
@@ -573,7 +629,9 @@
     if (!still) {
       // 오답 — 백이 살 수 있는 갈림. 정직하게 실패 처리.
       T.board = r.board; T.lastMove = [x, y]; renderBoard();
-      addWrong(T.prob.id); renderChips();
+      addWrong(T.prob.id);
+      if (!T.rated) { T.rated = true; bumpTsumegoElo(false, T.prob.rating); }
+      renderChips();
       setFb('아쉽네요 — 이 수로는 백이 살아요. [다시]로 재도전하거나 [정답 보기].', 'bad');
       T.done = true;
       return;
@@ -599,6 +657,7 @@
 
   function win() {
     T.done = true;
+    if (!T.rated) { T.rated = true; bumpTsumegoElo(true, T.prob.rating); }
     clearWrong(T.prob.id); markSolved(T.prob.id); renderChips();
     setFb('🎉 정답! 백 대상을 잡았습니다 — ' + T.prob.name, 'ok');
     try { if (window.legionTrack) window.legionTrack('activate'); } catch (e) {}
