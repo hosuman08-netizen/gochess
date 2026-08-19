@@ -645,6 +645,9 @@
       if (lastN === null) pr = '신기록 —';
       else if (lastN > 0 && lastN === best && lastOn && lastOn === on) pr = '신기록';
       else pr = '신기록 아님';
+      var prOn;
+      if (lastN !== null && lastN > 0 && lastN === best && lastOn && lastOn === on) prOn = '신기록일 ' + lastOn;
+      else prOn = '신기록일 —';
       bestEl.innerHTML = '러시 최고 ' + best + '문제'
         + (on ? ' · <span id="tp-rush-best-on">최고일 ' + on + '</span>' : '<span id="tp-rush-best-on"></span>')
         + ' · <span id="tp-rush-n">시도 ' + rushTries() + '</span>'
@@ -652,6 +655,7 @@
         + ' · <span id="tp-rush-last-on">' + (lastOn ? '직전일 ' + lastOn : '직전일 —') + '</span>'
         + ' · <span id="tp-rush-vs">' + vs + '</span>'
         + ' · <span id="tp-rush-pr">' + pr + '</span>'
+        + ' · <span id="tp-rush-pr-on">' + prOn + '</span>'
         + ' · 로컬 RAW ' + RAW.length + ' · 가짜 사활 0';
     }
     var btn = document.getElementById('tp-rush-btn');
