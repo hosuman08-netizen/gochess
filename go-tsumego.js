@@ -641,8 +641,24 @@
     try {
       localStorage.setItem('gc-tsumego-rush-pr-mo', String(n));
       localStorage.setItem('gc-tsumego-rush-pr-mo-key', rushMonthKey());
+      localStorage.setItem('gc-tsumego-rush-pr-mo-on', rushDayKey());
     } catch (e) {}
     return n;
+  }
+  /* WAVE130: 이번달 신기록일. YYYY-MM 키. 기존 RAW만. 가짜 문항 0. */
+  function rushPrMoOn() {
+    try {
+      var now = rushMonthKey();
+      var key = localStorage.getItem('gc-tsumego-rush-pr-mo-key');
+      if (key && key !== now) return '';
+      var stored = localStorage.getItem('gc-tsumego-rush-pr-mo-on');
+      if (stored && key === now) return stored;
+      if (rushBest() > 0) {
+        var on = rushBestOn();
+        return (on && on.slice(0, 7) === now) ? on : '';
+      }
+      return '';
+    } catch (e) { return ''; }
   }
   function bumpRushBest(n) {
     var b = rushBest();
@@ -701,6 +717,7 @@
         + ' · <span id="tp-rush-pr-on">' + prOn + '</span>'
         + ' · <span id="tp-rush-pr-n">신기록 ' + rushPrN() + '회</span>'
         + ' · <span id="tp-rush-pr-mo">이번달 신기록 ' + rushPrMo() + '회</span>'
+        + ' · <span id="tp-rush-pr-mo-on">' + (rushPrMoOn() ? '이번달 신기록일 ' + rushPrMoOn() : '이번달 신기록일 —') + '</span>'
         + ' · 로컬 RAW ' + RAW.length + ' · 가짜 사활 0';
     }
     var btn = document.getElementById('tp-rush-btn');
