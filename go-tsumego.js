@@ -421,6 +421,8 @@
     '.tp-elo b{color:var(--accent);}',
     '.tp-rush-status{color:var(--warn,#e0b552);font-size:0.74rem;font-weight:600;min-height:18px;margin:0 0 var(--s2);text-align:center;}',
     '.tp-rush-best{color:var(--ink-dim);font-size:0.68rem;text-align:center;margin:0 0 var(--s2);}',
+    '#tp-rush-btn.rush-flash{animation:rushFlash .7s ease-out;outline:2px solid var(--accent,#67e8f9);}',
+    '@keyframes rushFlash{0%{box-shadow:0 0 0 3px var(--accent,#67e8f9)}100%{box-shadow:0 0 0 0 transparent}}',
     '.tp-note{color:#666;font-size:0.68rem;text-align:center;margin-top:var(--s3);line-height:1.5;}'
   ].join('');
 
@@ -662,6 +664,25 @@
   }
   /* WAVE140: 이번달 신기록일 점프. 탭 → #tp-rush-btn. 기존 RAW만. 가짜 문항 0. */
   function rushPrMoJumpId() { return 'tp-rush-btn'; }
+  /* WAVE152: 점프 후 러시 플래시. 기존 RAW만. 가짜 문항 0. */
+  function rushFlashMs() { return 700; }
+  function flashRushAfterJump() {
+    var el = typeof document !== 'undefined' ? document.getElementById(rushPrMoJumpId()) : null;
+    if (!el) return false;
+    if (el.classList) {
+      el.classList.remove('rush-flash');
+      void el.offsetWidth;
+      el.classList.add('rush-flash');
+    }
+    if (el.setAttribute) el.setAttribute('data-flash', '1');
+    if (el._flashT) try { clearTimeout(el._flashT); } catch (e0) {}
+    el._flashT = setTimeout(function () {
+      if (el.classList) el.classList.remove('rush-flash');
+      if (el.setAttribute) el.setAttribute('data-flash', '0');
+      el._flashT = 0;
+    }, rushFlashMs());
+    return true;
+  }
   function jumpRushPrMoOn() {
     var on = rushPrMoOn();
     if (!on) return '';
@@ -669,6 +690,7 @@
     var el = typeof document !== 'undefined' ? document.getElementById(id) : null;
     if (el) {
       try { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) { try { el.scrollIntoView(); } catch (e2) {} }
+      flashRushAfterJump();
     }
     return el ? id : '';
   }
