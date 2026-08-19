@@ -588,6 +588,11 @@ header h1 {
 .cp-puz-fb.ok { color: #7fd88f; }
 .cp-puz-fb.no { color: #f0857a; }
 .cp-rush-status { font-size: 0.78rem; color: var(--warn); font-weight: 600; min-height: 18px; margin-bottom: 4px; }
+.cp-puz-elo {
+  font-size: 0.74rem; color: var(--ink-dim); margin-bottom: var(--s2);
+  font-variant-numeric: tabular-nums;
+}
+.cp-puz-elo b { color: var(--accent); }
 
 /* 승진 모달 */
 .cp-promo {

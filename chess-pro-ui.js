@@ -15,14 +15,30 @@
     { id: 'm1g', fen: '7k/5Q2/6K1/8/8/8/8/8 w - -', sol: ['f7g7'], theme: '메이트', rating: 900, t: '퀸 코너 외통' },
     { id: 'm1d', fen: '6k1/8/6K1/8/8/8/8/3Q4 w - -', sol: ['d1d8'], theme: '메이트', rating: 1000, t: '킹+퀸 협공 외통' },
     { id: 'm1e', fen: '6rk/6pp/7N/8/8/8/8/6K1 w - -', sol: ['h6f7'], theme: '메이트', rating: 1300, t: '질식 메이트' },
+    { id: 'm2a', fen: '6k1/5ppp/6N1/8/8/8/8/4R2K w - -', sol: ['e1e8'], theme: '메이트', rating: 950, t: '백랭크 — 나이트가 f8' },
+    { id: 'm2f', fen: '7k/6pp/5Q2/8/8/8/8/6K1 w - -', sol: ['f6f8'], theme: '메이트', rating: 900, t: '퀸 f8 외통' },
+    { id: 'm2g', fen: '6k1/6pp/8/6N1/8/8/8/4R1K1 w - -', sol: ['e1e8'], theme: '메이트', rating: 1000, t: '백랭크 — 나이트 커버' },
+    { id: 'm2e', fen: '7k/5Qpp/8/8/8/8/8/6K1 w - -', sol: ['f7f8'], theme: '메이트', rating: 1100, t: '퀸 f8 코너 외통' },
     { id: 'hg1', fen: '4k3/8/8/3b4/4P3/8/8/4K3 w - -', sol: ['e4d5'], theme: '무료기물', rating: 700, t: '무방비 비숍 포획' },
     { id: 'hg2', fen: '4k3/8/8/2q5/8/8/2R5/4K3 w - -', sol: ['c2c5'], theme: '무료기물', rating: 800, t: '무방비 퀸 포획' },
+    { id: 'hg3', fen: '4k3/8/8/8/8/8/4r3/4QK2 w - -', sol: ['e1e2'], theme: '무료기물', rating: 750, t: '무방비 룩 포획' },
+    { id: 'hg4', fen: '4k3/8/8/3n4/4P3/8/8/4K3 w - -', sol: ['e4d5'], theme: '무료기물', rating: 700, t: '무방비 나이트 포획' },
     { id: 'fk1', fen: 'r3k3/8/8/3N4/8/8/8/4K3 w - -', sol: ['d5c7'], theme: '포크', rating: 1000, t: '나이트 포크로 룩 획득' },
+    { id: 'dc1', fen: '4k2q/8/8/3N4/8/8/1B6/4K3 w - -', sol: ['d5f6'], theme: '발견', rating: 1300, t: '나이트가 비키면 비숍이 퀸' },
     { id: 'sk1', fen: '7k/8/8/8/8/q7/8/R3K3 w - -', sol: ['a1a3'], theme: '스큐어', rating: 900, t: '무방비 퀸 획득' },
+    { id: 'sk2', fen: '4k3/8/8/8/8/q7/8/R3K3 w - -', sol: ['a1a3'], theme: '스큐어', rating: 850, t: '룩 스큐어로 퀸' },
     { id: 'pn1', fen: '3rk3/8/8/8/8/8/3R4/3RK3 w - -', sol: ['d2d8'], theme: '핀', rating: 1100, t: '핀으로 룩 획득' },
-    { id: 'pr1', fen: '4k3/P7/8/8/8/8/8/4K3 w - -', sol: ['a7a8q'], theme: '승진', rating: 700, t: '폰을 퀸으로 승진' }
+    { id: 'pn2', fen: '4k3/8/8/8/8/8/3r4/3RK3 w - -', sol: ['d1d2'], theme: '핀', rating: 800, t: '같은 줄 룩 포획' },
+    { id: 'pr1', fen: '4k3/P7/8/8/8/8/8/4K3 w - -', sol: ['a7a8q'], theme: '승진', rating: 700, t: '폰을 퀸으로 승진' },
+    { id: 'pr2', fen: '8/4P1k1/8/8/8/8/8/4K3 w - -', sol: ['e7e8q'], theme: '승진', rating: 750, t: '7랭크 폰 퀸 승진' }
   ];
-  var THEMES = ['전체', '메이트', '포크', '무료기물', '스큐어', '핀', '승진', '오답복습'];
+  var THEMES = ['전체', '메이트', '포크', '발견', '무료기물', '스큐어', '핀', '승진', '오답복습'];
+  var BANDS = [
+    { id: 'all', t: '전구간' },
+    { id: 'easy', t: '≤900' },
+    { id: 'mid', t: '901–1199' },
+    { id: 'hard', t: '1200+' }
+  ];
 
   // --- 세션 상태 ---
   var S = {
@@ -33,7 +49,7 @@
     bot: null,
     rated: false,      // 이 대국 레이팅 반영 여부(끝나면 true)
     snaps: [],         // 무르기용 스냅샷 {board, st}
-    puzzle: null, theme: '전체', rush: null, pending: null
+    puzzle: null, theme: '전체', band: 'all', rush: null, pending: null, puzRated: false
   };
 
   function uci(m) { return CP.sqName(m.sx, m.sy) + CP.sqName(m.tx, m.ty) + (m.promo || ''); }
@@ -487,10 +503,37 @@
   function wrongQueue() { try { return JSON.parse(localStorage.getItem('gc-puzzle-wrong') || '[]'); } catch (e) { return []; } }
   function addWrong(id) { var q = wrongQueue(); if (q.indexOf(id) < 0) { q.push(id); try { localStorage.setItem('gc-puzzle-wrong', JSON.stringify(q)); } catch (e) {} } }
   function clearWrong(id) { var q = wrongQueue().filter(function (x) { return x !== id; }); try { localStorage.setItem('gc-puzzle-wrong', JSON.stringify(q)); } catch (e) {} }
+  function puzElo() {
+    try { var r = JSON.parse(localStorage.getItem('gc-puz-elo') || 'null'); return r || { elo: 1000, n: 0, ok: 0 }; }
+    catch (e) { return { elo: 1000, n: 0, ok: 0 }; }
+  }
+  function bumpPuzElo(win, pRating) {
+    var r = puzElo();
+    var K = r.n < 20 ? 32 : 20;
+    var E = 1 / (1 + Math.pow(10, ((pRating || 1000) - r.elo) / 400));
+    r.elo = Math.max(400, Math.min(2400, Math.round(r.elo + K * ((win ? 1 : 0) - E))));
+    r.n++; if (win) r.ok++;
+    try { localStorage.setItem('gc-puz-elo', JSON.stringify(r)); } catch (e) {}
+    return r;
+  }
+  function renderPuzElo() {
+    var el = document.getElementById('cp-puz-elo'); if (!el) return;
+    var r = puzElo();
+    el.innerHTML = '퍼즐 Elo <b>' + r.elo + '</b> · ' + r.ok + '/' + r.n + ' · 로컬 ' + PUZZLES.length + '문항 · 리더보드 없음';
+  }
+  function bandOk(p) {
+    if (S.band === 'easy') return p.rating <= 900;
+    if (S.band === 'mid') return p.rating > 900 && p.rating < 1200;
+    if (S.band === 'hard') return p.rating >= 1200;
+    return true;
+  }
   function themePool() {
-    if (S.theme === '전체') return PUZZLES.slice();
-    if (S.theme === '오답복습') { var q = wrongQueue(); return PUZZLES.filter(function (p) { return q.indexOf(p.id) >= 0; }); }
-    return PUZZLES.filter(function (p) { return p.theme === S.theme; });
+    var base;
+    if (S.theme === '전체') base = PUZZLES.slice();
+    else if (S.theme === '오답복습') { var q = wrongQueue(); base = PUZZLES.filter(function (p) { return q.indexOf(p.id) >= 0; }); }
+    else base = PUZZLES.filter(function (p) { return p.theme === S.theme; });
+    var banded = base.filter(bandOk);
+    return banded.length ? banded : base;
   }
   window.startDailyPuzzle = function () {
     switchMode('chess');
@@ -504,18 +547,23 @@
     S.rush = null;
     loadPuzzle(pickPuzzle());
     renderThemeChips();
+    renderBandChips();
+    renderPuzElo();
     try { if (window.legionTrack) legionTrack('daily_focus', {}); } catch (e) {}
   }
   function pickPuzzle() {
     var pool = themePool();
-    if (!pool.length) { toast('이 테마에 퍼즐이 없어요'); pool = PUZZLES.slice(); S.theme = '전체'; renderThemeChips(); }
-    return pool[Math.floor(Math.random() * pool.length)];
+    if (!pool.length) { toast('이 테마에 퍼즐이 없어요'); pool = PUZZLES.slice(); S.theme = '전체'; S.band = 'all'; renderThemeChips(); renderBandChips(); }
+    var elo = puzElo().elo;
+    var near = pool.filter(function (p) { return Math.abs(p.rating - elo) <= 200; });
+    var use = near.length ? near : pool;
+    return use[Math.floor(Math.random() * use.length)];
   }
   window.generatePuzzle = function () { openPuzzleTrainer(); };
   window.checkPuzzleSolution = function () {};
 
   function loadPuzzle(p) {
-    S.puzzle = p; S.mode = 'puzzle'; puzzleActive = true; chessGameOver = false;
+    S.puzzle = p; S.mode = 'puzzle'; puzzleActive = true; chessGameOver = false; S.puzRated = false;
     var pos = CP.fenToPosition(p.fen);
     setBoard(pos.b); S.st = { turn: pos.st.turn, cast: pos.st.cast, ep: pos.st.ep };
     chessCurrentPlayer = S.st.turn;
@@ -526,6 +574,7 @@
     if (title) title.innerHTML = '<b>' + p.t + '</b> <span class="cp-eco">' + p.theme + ' · ' + p.rating + '</span>';
     if (fb) { fb.textContent = (S.st.turn === 'w' ? '백' : '흑') + '이 둘 차례 — 최선의 한 수를 찾으세요.'; fb.className = 'cp-puz-fb'; }
     updateStatus('퍼즐: ' + p.t);
+    renderPuzElo();
     var rushEl = document.getElementById('cp-rush-status');
     if (rushEl) rushEl.textContent = S.rush ? ('러시 · 생명 ' + '♥'.repeat(S.rush.lives) + ' · 해결 ' + S.rush.solved) : '';
   }
@@ -555,6 +604,7 @@
       setBoard(r.b); S.st = r.st; lastChessMove = { from: [m.sx, m.sy], to: [m.tx, m.ty] };
       selected = null; legalTargets = []; renderChess();
       clearWrong(p.id);
+      if (!S.puzRated) { S.puzRated = true; bumpPuzElo(true, p.rating); renderPuzElo(); }
       if (fb) { fb.textContent = '✅ 정답! ' + sanTxt.replace(/[+#]/, '') + ' — 훌륭합니다.'; fb.className = 'cp-puz-fb ok'; }
       try { if (window.legionTrack) window.legionTrack('activate'); } catch (e) {}
       gameLog.push({ mode: 'puzzle', solved: true, id: p.id, ts: Date.now() });
@@ -565,6 +615,7 @@
     } else {
       selected = null; legalTargets = []; renderChess();
       addWrong(p.id);
+      if (!S.puzRated) { S.puzRated = true; bumpPuzElo(false, p.rating); renderPuzElo(); }
       if (fb) { fb.textContent = '❌ 아직 아니에요 — 다시 시도. (오답 복습 목록에 추가됨)'; fb.className = 'cp-puz-fb no'; }
       if (S.rush) { S.rush.lives--; if (S.rush.lives <= 0) return endRush(); var rushEl = document.getElementById('cp-rush-status'); if (rushEl) rushEl.textContent = '러시 · 생명 ' + '♥'.repeat(S.rush.lives) + ' · 해결 ' + S.rush.solved; setTimeout(function () { loadPuzzle(pickPuzzle()); }, 600); }
       else setTimeout(function () { loadPuzzle(p); }, 700); // 같은 퍼즐 재시도
@@ -614,6 +665,22 @@
       wrap.appendChild(chip);
     });
   }
+  function renderBandChips() {
+    var wrap = document.getElementById('cp-band-chips'); if (!wrap) return;
+    wrap.innerHTML = '';
+    BANDS.forEach(function (b) {
+      var chip = document.createElement('button');
+      chip.className = 'cp-chip' + (S.band === b.id ? ' on' : '');
+      chip.textContent = b.t;
+      chip.onclick = function () { S.band = b.id; renderBandChips(); loadPuzzle(pickPuzzle()); };
+      wrap.appendChild(chip);
+    });
+  }
+  function openLichessPuzzles() {
+    toast('Lichess 퍼즐로 엽니다 · 우리 문항 아님');
+    try { if (window.legionTrack) window.legionTrack('engine_out', { kind: 'lichess-puz' }); } catch (e) {}
+    window.open('https://lichess.org/training', '_blank', 'noopener,noreferrer');
+  }
 
   // ============================ 헤더(레이팅/상대) ============================
   function refreshHeader() {
@@ -651,7 +718,9 @@
       '<div id="cp-review" class="cp-panel hidden"><div class="cp-panel-h">📊 게임 리뷰<button class="cp-x" data-close="cp-review">✕</button></div><div id="cp-review-body"></div></div>' +
       '<div id="cp-puzzle" class="cp-panel hidden">' +
         '<div class="cp-panel-h">🧩 퍼즐 훈련소<button class="cp-x" data-close="cp-puzzle" data-exit="1">✕</button></div>' +
+        '<div id="cp-puz-elo" class="cp-puz-elo"></div>' +
         '<div id="cp-theme-chips" class="cp-chips"></div>' +
+        '<div id="cp-band-chips" class="cp-chips"></div>' +
         '<div id="cp-puz-title" class="cp-puz-title"></div>' +
         '<div id="cp-puz-fb" class="cp-puz-fb"></div>' +
         '<div id="cp-rush-status" class="cp-rush-status"></div>' +
@@ -659,8 +728,10 @@
           '<button id="cp-puz-hint" class="cp-btn">힌트</button>' +
           '<button id="cp-puz-next" class="cp-btn">다음 퍼즐</button>' +
           '<button id="cp-rush-btn" class="cp-btn cp-accent">퍼즐 러시</button>' +
+          '<button id="cp-puz-lichess" class="cp-btn">Lichess 퍼즐</button>' +
           '<button id="cp-puz-exit" class="cp-btn">대국으로</button>' +
         '</div>' +
+        '<p class="cp-engine-note">로컬 ' + PUZZLES.length + '문항은 엔진 검증된 한 수. 레이팅은 이 기기 Elo. 볼륨은 Lichess.</p>' +
       '</div>';
     // #chess-grid 다음, controls 앞에 삽입되도록 controls 앞에
     var controls = host.querySelector('.controls');
@@ -684,6 +755,7 @@
     document.getElementById('cp-puz-hint').onclick = puzzleHint;
     document.getElementById('cp-puz-next').onclick = function () { if (S.rush) nextRush(); else loadPuzzle(pickPuzzle()); };
     document.getElementById('cp-rush-btn').onclick = function () { if (S.rush) endRush(); else startRush(); };
+    document.getElementById('cp-puz-lichess').onclick = openLichessPuzzles;
     document.getElementById('cp-puz-exit').onclick = exitPuzzle;
     wrap.querySelectorAll('.cp-x').forEach(function (x) { x.onclick = function () { if (x.dataset.exit) exitPuzzle(); else hidePanel(x.dataset.close); }; });
 
