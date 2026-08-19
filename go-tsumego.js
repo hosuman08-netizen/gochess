@@ -265,6 +265,110 @@
         '.BBBB.',
         '......'
       ], target: [1, 1]
+    },
+    /* WAVE35: Sensei 첫포획 고전 볼륨. 가짜 사활·발명 문항 0. solver가 포획을 검증. */
+    {
+      id: 'atari2', theme: '단수', rating: 450, depth: 1,
+      name: '변 단수 — 한 점 잡기',
+      tip: '변에 붙은 백 한 점. 열린 활로 하나를 메우면 잡힌다. Sensei first capture.',
+      rows: [
+        'BW...',
+        '.B...',
+        '.....',
+        '.....',
+        '.....'
+      ], target: [1, 0]
+    },
+    {
+      id: 'atari3', theme: '단수', rating: 500, depth: 1,
+      name: '두 점 단수',
+      tip: '붙어서 활로가 하나인 백 두 점. 그 자리를 메운다.',
+      rows: [
+        '.BB..',
+        '.WWB.',
+        '.BB..',
+        '.....',
+        '.....'
+      ], target: [1, 1]
+    },
+    {
+      id: 'dble1', theme: '단수', rating: 800, depth: 3,
+      name: '양단수 — 한 수로 둘',
+      tip: '한 점이 두 백을 동시에 단수. Sensei double atari.',
+      rows: [
+        '.B.B.',
+        '.WBW.',
+        '.B.B.',
+        '.....',
+        '.....'
+      ], target: [1, 1]
+    },
+    {
+      id: 'ladder2', theme: '축(莊)', rating: 850, depth: 7,
+      name: '축 — 한 칸 더 몰기',
+      tip: '단수로 계속 몬다. 방향이 틀리면 백이 빠진다.',
+      rows: [
+        '......',
+        '.BW...',
+        '.BB...',
+        '......',
+        '......',
+        '......'
+      ], target: [2, 1]
+    },
+    {
+      id: 'net2', theme: '장문(藏門)', rating: 1150, depth: 5,
+      name: '장문 — 한 칸 뛰어 덮기',
+      tip: '바로 단수하면 달아난다. 그물을 먼저. Sensei geta.',
+      rows: [
+        '........',
+        '....B...',
+        '...BW.B.',
+        '.....B..',
+        '....B...',
+        '........',
+        '........',
+        '........'
+      ], target: [4, 2]
+    },
+    {
+      id: 'short2', theme: '촉촉수', rating: 1050, depth: 3,
+      name: '촉촉수 — 달아날 활로 지우기',
+      tip: '도망쳐도 활로가 하나 모자라게. Sensei shortage of liberties.',
+      rows: [
+        'BBBBBBB',
+        'BWWW..B',
+        'BBBBBBB',
+        '.......',
+        '.......',
+        '.......',
+        '.......'
+      ], target: [1, 1]
+    },
+    {
+      id: 'throw2', theme: '궁도(宮圖)', rating: 950, depth: 3,
+      name: '1궁 먹여치기',
+      tip: '한 칸 빈 궁. 먹여치면 백이 자충. Sensei throw-in.',
+      rows: [
+        '.BBB.',
+        'BWWWB',
+        'BW.WB',
+        'BWWWB',
+        '.BBB.'
+      ], target: [1, 1]
+    },
+    {
+      id: 'seme1', theme: '수상전', rating: 1100, depth: 3,
+      name: '수상전 — 두 활로 메우기',
+      tip: '둘러싼 백의 활로가 둘. 먼저 메운다. Sensei capturing race.',
+      rows: [
+        'BBBBBB',
+        'BWWW.B',
+        'BWWW.B',
+        'BBBBBB',
+        '......',
+        '......'
+      ], target: [1, 1]
     }
   ];
 
@@ -359,7 +463,7 @@
       '<button class="cp-btn cp-accent" id="tp-next">다음 문제</button>' +
       '<button class="cp-btn" id="tp-exit">닫기</button>' +
       '</div>' +
-      '<div class="tp-note">흑을 두어 표시된 백 대상을 잡으세요. 상대(백)의 응수와 정답 판정은 모두 내장 사활 엔진(AND-OR 탐색)이 실제로 계산합니다 — 스크립트된 가짜 정답이 아닙니다. · 가상 학습 시뮬레이션.</div>';
+      '<div class="tp-note">흑을 두어 표시된 백 대상을 잡으세요. 로컬 문항은 Sensei 첫포획 고전만 · 가짜 사활 0. 상대 응수·정답은 내장 사활 엔진이 계산합니다. · 가상 학습 시뮬레이션.</div>';
     // go-board의 controls 앞에 삽입
     var controls = host.querySelector('.controls');
     if (controls) host.insertBefore(wrap, controls); else host.appendChild(wrap);
