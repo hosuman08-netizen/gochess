@@ -465,6 +465,15 @@
     // 다운로드도 함께 제공
     dlPGN(pgn);
   }
+  /* GOLD50 TOP2: 엔진 깊이 — 로컬 미니AI를 Stockfish로 위장하지 않음. FEN을 Lichess 분석판으로 넘긴다. */
+  function openLichessEngine() {
+    if (!chessBoard || !S.st) { toast('체스판이 없습니다'); return; }
+    var fen = CP.boardToFen(chessBoard, S.st);
+    var url = 'https://lichess.org/analysis/standard/' + encodeURI(fen.replace(/ /g, '_'));
+    toast('Lichess Stockfish로 엽니다 · 로컬 AI 아님');
+    try { if (window.legionTrack) window.legionTrack('engine_out', { kind: 'lichess' }); } catch (e) {}
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }
   function dlPGN(pgn) {
     try {
       var blob = new Blob([pgn], { type: 'text/plain' });
@@ -634,8 +643,10 @@
         '<button id="cp-undo-btn" class="cp-btn">무르기</button>' +
         '<button id="cp-explorer-btn" class="cp-btn">정석 탐색기</button>' +
         '<button id="cp-pgn-btn" class="cp-btn">PGN</button>' +
+        '<button id="cp-engine-btn" class="cp-btn">Lichess 엔진</button>' +
         '<button id="cp-review-btn" class="cp-btn cp-accent">게임 리뷰</button>' +
       '</div>' +
+      '<p class="cp-engine-note">로컬 AI는 얕은 탐색입니다. 진지 복기는 Stockfish(Lichess)로 엽니다 — 우리 엔진이 아닙니다.</p>' +
       '<div id="cp-explorer" class="cp-panel hidden"><div class="cp-panel-h">📖 정석 탐색기<button class="cp-x" data-close="cp-explorer">✕</button></div><div id="cp-explorer-body"></div></div>' +
       '<div id="cp-review" class="cp-panel hidden"><div class="cp-panel-h">📊 게임 리뷰<button class="cp-x" data-close="cp-review">✕</button></div><div id="cp-review-body"></div></div>' +
       '<div id="cp-puzzle" class="cp-panel hidden">' +
@@ -667,6 +678,7 @@
     document.getElementById('cp-hint-btn').onclick = hint;
     document.getElementById('cp-undo-btn').onclick = takeback;
     document.getElementById('cp-pgn-btn').onclick = exportPGN;
+    document.getElementById('cp-engine-btn').onclick = openLichessEngine;
     document.getElementById('cp-explorer-btn').onclick = toggleExplorer;
     document.getElementById('cp-review-btn').onclick = runReview;
     document.getElementById('cp-puz-hint').onclick = puzzleHint;

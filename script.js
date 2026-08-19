@@ -182,8 +182,15 @@ function renderStreak() {
 }
 
 // --- Mode Switching ---
+function hideNineOnramp() {
+  const p = document.getElementById('nine-panel');
+  if (p) p.classList.add('hidden');
+  if (nineTimer) { clearInterval(nineTimer); nineTimer = null; }
+}
+
 function switchMode(mode) {
   if (typeof window.hideTsumego === 'function') window.hideTsumego(); // 사활 훈련소 UI 정리
+  hideNineOnramp();
   document.getElementById('go-board').classList.add('hidden');
   document.getElementById('chess-board').classList.add('hidden');
   document.getElementById('fusion-panel').classList.add('hidden');
@@ -232,6 +239,170 @@ function initGo() {
     }
   }
   renderGo();
+}
+
+/* 9×9 first-game onramp — ChessKid/GoQuest: win on a small board in 3 min */
+const NINE_N = 9;
+let nineBoard = null;
+let nineTurn = 1;
+let nineTimer = null;
+let nineLeft = 10;
+let nineMoves = 0;
+
+function startNineOnramp() {
+  if (typeof window.hideTsumego === 'function') window.hideTsumego();
+  document.getElementById('go-board').classList.add('hidden');
+  document.getElementById('chess-board').classList.add('hidden');
+  document.getElementById('fusion-panel').classList.add('hidden');
+  const study = document.getElementById('study-panel');
+  if (study) study.classList.add('hidden');
+  const panel = document.getElementById('nine-panel');
+  if (!panel) return;
+  panel.classList.remove('hidden');
+  currentMode = 'nine';
+  resetNineOnramp();
+}
+
+function resetNineOnramp() {
+  nineBoard = Array(NINE_N).fill().map(() => Array(NINE_N).fill(0));
+  nineTurn = 1;
+  nineMoves = 0;
+  nineLeft = 10;
+  const grid = document.getElementById('nine-grid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  grid.style.gridTemplateColumns = 'repeat(9, 1fr)';
+  const STAR = new Set(['2,2', '2,6', '6,2', '6,6', '4,4']);
+  for (let y = 0; y < NINE_N; y++) {
+    for (let x = 0; x < NINE_N; x++) {
+      const cell = document.createElement('div');
+      cell.className = STAR.has(x + ',' + y) ? 'cell star' : 'cell';
+      cell.dataset.x = x;
+      cell.dataset.y = y;
+      cell.onclick = () => placeNine(x, y);
+      grid.appendChild(cell);
+    }
+  }
+  paintNine();
+  tickNineHint();
+  updateStatus('9×9 첫판 • 흑 턴 • 10초 안에 한 수');
+}
+
+function tickNineHint() {
+  if (nineTimer) clearInterval(nineTimer);
+  nineLeft = 10;
+  const hint = document.getElementById('nine-hint');
+  nineTimer = setInterval(() => {
+    nineLeft -= 1;
+    if (!hint) return;
+    if (nineTurn !== 1) return;
+    if (nineLeft <= 0) {
+      hint.className = 'nine-hint warn';
+      hint.textContent = '시간 — 중앙(화점) 근처부터. 귀·변은 나중에.';
+    } else {
+      hint.className = 'nine-hint';
+      hint.textContent = nineLeft + '초 안에 한 수 — 중앙 근처가 안전합니다.';
+    }
+  }, 1000);
+  if (hint) {
+    hint.className = 'nine-hint';
+    hint.textContent = '10초 안에 한 수 — 중앙 근처가 안전합니다. 작은 판에서 먼저 이기세요.';
+  }
+}
+
+function nineLibs(board, x, y) {
+  const color = board[y][x];
+  if (!color) return 1;
+  const seen = Array(NINE_N).fill().map(() => Array(NINE_N).fill(false));
+  const libs = new Set();
+  const stack = [[x, y]];
+  seen[y][x] = true;
+  while (stack.length) {
+    const [cx, cy] = stack.pop();
+    for (const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+      const nx = cx + dx, ny = cy + dy;
+      if (nx < 0 || nx >= NINE_N || ny < 0 || ny >= NINE_N) continue;
+      const v = board[ny][nx];
+      if (v === 0) libs.add(nx + ',' + ny);
+      else if (v === color && !seen[ny][nx]) { seen[ny][nx] = true; stack.push([nx, ny]); }
+    }
+  }
+  return libs.size;
+}
+
+function nineCapture(board, x, y, color) {
+  const enemy = color === 1 ? 2 : 1;
+  let n = 0;
+  for (const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+    const nx = x + dx, ny = y + dy;
+    if (nx < 0 || nx >= NINE_N || ny < 0 || ny >= NINE_N) continue;
+    if (board[ny][nx] !== enemy) continue;
+    if (nineLibs(board, nx, ny) === 0) {
+      const seen = Array(NINE_N).fill().map(() => Array(NINE_N).fill(false));
+      const stack = [[nx, ny]];
+      seen[ny][nx] = true;
+      while (stack.length) {
+        const [cx, cy] = stack.pop();
+        board[cy][cx] = 0; n++;
+        for (const [ox, oy] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+          const px = cx + ox, py = cy + oy;
+          if (px < 0 || px >= NINE_N || py < 0 || py >= NINE_N) continue;
+          if (board[py][px] === enemy && !seen[py][px]) { seen[py][px] = true; stack.push([px, py]); }
+        }
+      }
+    }
+  }
+  return n;
+}
+
+function placeNine(x, y) {
+  if (!nineBoard || nineBoard[y][x] || nineTurn !== 1) return;
+  nineBoard[y][x] = 1;
+  nineCapture(nineBoard, x, y, 1);
+  if (nineLibs(nineBoard, x, y) === 0) { nineBoard[y][x] = 0; return; }
+  nineMoves++;
+  nineTurn = 2;
+  paintNine();
+  const hint = document.getElementById('nine-hint');
+  if (hint) { hint.className = 'nine-hint'; hint.textContent = '백(연습 AI) 응수 중…'; }
+  setTimeout(nineAiMove, 380);
+}
+
+function nineAiMove() {
+  if (!nineBoard || nineTurn !== 2) return;
+  const cands = [];
+  for (let y = 0; y < NINE_N; y++) for (let x = 0; x < NINE_N; x++) {
+    if (nineBoard[y][x]) continue;
+    const dist = Math.abs(x - 4) + Math.abs(y - 4);
+    cands.push({ x, y, s: -dist + Math.random() });
+  }
+  cands.sort((a, b) => b.s - a.s);
+  const pick = cands[0];
+  if (!pick) { nineTurn = 1; paintNine(); return; }
+  nineBoard[pick.y][pick.x] = 2;
+  nineCapture(nineBoard, pick.x, pick.y, 2);
+  nineTurn = 1;
+  paintNine();
+  tickNineHint();
+  if (nineMoves >= 8) {
+    const hint = document.getElementById('nine-hint');
+    if (hint) hint.textContent = '첫판 감 잡힘. 19×19 본판으로 가도 됩니다.';
+  }
+  updateStatus('9×9 첫판 • 흑 턴');
+}
+
+function paintNine() {
+  const cells = document.querySelectorAll('#nine-grid .cell');
+  cells.forEach(cell => {
+    const x = +cell.dataset.x, y = +cell.dataset.y;
+    cell.innerHTML = '';
+    const val = nineBoard && nineBoard[y] && nineBoard[y][x];
+    if (val) {
+      const stone = document.createElement('div');
+      stone.className = 'stone ' + (val === 1 ? 'black' : 'white');
+      cell.appendChild(stone);
+    }
+  });
 }
 
 function renderGo() {

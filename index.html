@@ -32,7 +32,8 @@
       <h1>GoChess <span class="tag">바둑 + 체스</span></h1>
       <div class="disclosure">18+ 가상 전략 시뮬레이션 · 실제 대전 아님 · 현금/도박 없음 · 순수 학습용 (fictional, prominent disclosure)</div>
       <div class="nav">
-        <button class="primary" onclick="switchMode('go')">바둑</button>
+        <button class="primary" onclick="startNineOnramp()">9×9 첫판</button>
+        <button class="primary" onclick="switchMode('go')">바둑 19×19</button>
         <button class="primary" onclick="switchMode('chess')">체스</button>
         <button class="primary" onclick="switchMode('fusion')">퓨전 모드</button>
         <button class="util" onclick="showStudy()">공부 모드</button>
@@ -45,6 +46,17 @@
       <div id="streak-display" style="font-size:0.85em;color:#4a9eff;margin-top:4px;">🔥 연속 출석: 0일 • 오늘 0수</div>
     </header>
 
+    <!-- 9×9 onramp: ChessKid/GoQuest 첫 3분 "작은 판에서 이긴다" -->
+    <div id="nine-panel" class="board-section hidden">
+      <h2>바둑 첫판 (9×9)</h2>
+      <p id="nine-hint" class="nine-hint">10초 안에 한 수 — 중앙 근처가 안전합니다. 작은 판에서 먼저 이기세요.</p>
+      <div id="nine-grid" class="go-grid nine-grid"></div>
+      <div class="controls">
+        <button type="button" onclick="resetNineOnramp()">다시</button>
+        <button type="button" class="primary" onclick="switchMode('go')">19×19 본판</button>
+      </div>
+    </div>
+
     <!-- Go Board -->
     <div id="go-board" class="board-section">
       <h2>바둑 (19×19)</h2>
@@ -53,6 +65,7 @@
         <button onclick="passGo()">패스</button>
         <button onclick="resetGo()">초기화</button>
         <button onclick="exportGoSGF()">SGF 내보내기</button>
+        <button onclick="openGoExternalEngine()">KataGo 복기</button>
         <button onclick="endGameAndStudy()">종료+학습</button>
       </div>
     </div>
@@ -133,5 +146,6 @@
 
 <script>if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').catch(function(){});}</script>
 
+  <script src="lung-surprise-eye.js"></script>
 </body>
 </html>

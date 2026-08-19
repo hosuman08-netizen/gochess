@@ -569,7 +569,7 @@
       var ctr = host.querySelector('.controls'); if (ctr) ctr.style.display = 'none';
     }
     // 다른 섹션 숨김
-    ['chess-board', 'fusion-panel', 'study-panel'].forEach(function (id) { var e = document.getElementById(id); if (e) e.classList.add('hidden'); });
+    ['chess-board', 'fusion-panel', 'study-panel', 'nine-panel'].forEach(function (id) { var e = document.getElementById(id); if (e) e.classList.add('hidden'); });
     var wrap = document.getElementById('tp-wrap'); if (wrap) wrap.classList.remove('hidden');
     if (!T.prob) nextProblem(); else loadProblem(T.prob);
     try { if (window.legionTrack) window.legionTrack('daily_focus', { mode: 'tsumego' }); } catch (e) {}
@@ -626,9 +626,24 @@
     } catch (e) { if (!copied && typeof showToast === 'function') showToast('SGF 저장 실패'); }
     try { if (window.legionTrack) window.legionTrack('share', { kind: 'sgf' }); } catch (e) {}
   }
+  /* GOLD50 TOP2: KataGo 깊이 — 로컬 사활 solver를 본판 엔진으로 위장하지 않음. SGF 복사 후 AI Sensei. */
+  function openGoExternalEngine() {
+    var sgf = buildGoSGF();
+    var hasMoves = /;[BW]\[/.test(sgf);
+    if (hasMoves && navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(sgf).then(function () {
+        if (typeof showToast === 'function') showToast('SGF 복사됨 · AI Sensei에 붙여넣기 (로컬 엔진 아님)');
+      }, function () {});
+    } else if (typeof showToast === 'function') {
+      showToast('AI Sensei(KataGo)로 엽니다 · 기보가 있으면 SGF 먼저 내보내기');
+    }
+    try { if (window.legionTrack) window.legionTrack('engine_out', { kind: 'aisensei' }); } catch (e) {}
+    window.open('https://ai-sensei.com/', '_blank', 'noopener,noreferrer');
+  }
 
   window.startTsumego = startTsumego;
   window.exportGoSGF = exportGoSGF;
+  window.openGoExternalEngine = openGoExternalEngine;
   window.hideTsumego = hideTsumego;
   window.GoTsumego = API;
 })();
