@@ -559,15 +559,27 @@
     return list[0];
   }
 
-  /* WAVE56: 러시 최고점 로컬. 기존 RAW만. 가짜 문항 0. */
+  /* WAVE56: 러시 최고점 로컬. WAVE62: 최고일 1줄. 기존 RAW만. 가짜 문항 0. */
+  function rushDayKey() {
+    var d = new Date();
+    var m = d.getMonth() + 1, day = d.getDate();
+    return d.getFullYear() + '-' + (m < 10 ? '0' : '') + m + '-' + (day < 10 ? '0' : '') + day;
+  }
   function rushBest() {
     try { return Math.max(0, +localStorage.getItem('gc-tsumego-rush-best') || 0); }
     catch (e) { return 0; }
   }
+  function rushBestOn() {
+    try { return localStorage.getItem('gc-tsumego-rush-best-on') || ''; }
+    catch (e) { return ''; }
+  }
   function bumpRushBest(n) {
     var b = rushBest();
     if ((+n || 0) > b) {
-      try { localStorage.setItem('gc-tsumego-rush-best', String(+n || 0)); } catch (e) {}
+      try {
+        localStorage.setItem('gc-tsumego-rush-best', String(+n || 0));
+        localStorage.setItem('gc-tsumego-rush-best-on', rushDayKey());
+      } catch (e) {}
       return +n || 0;
     }
     return b;
@@ -587,7 +599,12 @@
     var el = document.getElementById('tp-rush-status');
     if (el) el.textContent = T.rush ? ('러시 · 생명 ' + '♥'.repeat(Math.max(0, T.rush.lives)) + ' · 해결 ' + T.rush.solved + ' · 최고 ' + best) : '';
     var bestEl = document.getElementById('tp-rush-best');
-    if (bestEl) bestEl.textContent = '러시 최고 ' + best + '문제 · 로컬 RAW ' + RAW.length + ' · 가짜 사활 0';
+    if (bestEl) {
+      var on = rushBestOn();
+      bestEl.innerHTML = '러시 최고 ' + best + '문제'
+        + (on ? ' · <span id="tp-rush-best-on">최고일 ' + on + '</span>' : '<span id="tp-rush-best-on"></span>')
+        + ' · 로컬 RAW ' + RAW.length + ' · 가짜 사활 0';
+    }
     var btn = document.getElementById('tp-rush-btn');
     if (btn) btn.textContent = T.rush ? '러시 종료' : '사활 러시';
     var solve = document.getElementById('tp-solve');
