@@ -672,6 +672,7 @@
   /* WAVE161: 플래시 중 재탭=플래시즉끄기. 기존 RAW만. 가짜 문항 0. */
   /* WAVE166: 플래시 끈 뒤 러시버튼 포커스. 기존 RAW만. 가짜 문항 0. */
   /* WAVE170: 포커스 링. 기존 RAW만. 가짜 문항 0. */
+  /* WAVE174: 링 중 재탭=링 재시작. 기존 RAW만. 가짜 문항 0. */
   function rushFlashMs() { return 700; }
   function rushFlashOn(el) {
     el = el || (typeof document !== 'undefined' ? document.getElementById(rushPrMoJumpId()) : null);
@@ -682,19 +683,34 @@
     return false;
   }
   function rushFocusRingMs() { return 400; }
+  function rushFocusRingOn(el) {
+    el = el || (typeof document !== 'undefined' ? document.getElementById(rushPrMoJumpId()) : null);
+    if (!el) return false;
+    if (el._ringT) return true;
+    if (el.classList && el.classList.contains('rush-focus-ring')) return true;
+    if (el.getAttribute && el.getAttribute('data-focus-ring') === '1') return true;
+    return false;
+  }
   function armRushFocusRing() {
     var el = typeof document !== 'undefined' ? document.getElementById(rushPrMoJumpId()) : null;
     if (!el) return false;
+    var retr = rushFocusRingOn(el);
     if (el.classList) {
       el.classList.remove('rush-focus-ring');
       void el.offsetWidth;
       el.classList.add('rush-focus-ring');
     }
-    if (el.setAttribute) el.setAttribute('data-focus-ring', '1');
+    if (el.setAttribute) {
+      el.setAttribute('data-focus-ring', '1');
+      el.setAttribute('data-re-ring', retr ? '1' : '0');
+    }
     if (el._ringT) try { clearTimeout(el._ringT); } catch (e0) {}
     el._ringT = setTimeout(function () {
       if (el.classList) el.classList.remove('rush-focus-ring');
-      if (el.setAttribute) el.setAttribute('data-focus-ring', '0');
+      if (el.setAttribute) {
+        el.setAttribute('data-focus-ring', '0');
+        el.setAttribute('data-re-ring', '0');
+      }
       el._ringT = 0;
     }, rushFocusRingMs());
     return true;
@@ -742,6 +758,10 @@
     if (!el) return '';
     if (rushFlashOn(el)) {
       killRushFlash();
+      return id;
+    }
+    if (rushFocusRingOn(el)) {
+      armRushFocusRing();
       return id;
     }
     try { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) { try { el.scrollIntoView(); } catch (e2) {} }
