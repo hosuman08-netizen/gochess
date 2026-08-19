@@ -420,6 +420,7 @@
     '.tp-elo{color:var(--ink-dim);font-size:0.72rem;margin:0 0 var(--s2);}',
     '.tp-elo b{color:var(--accent);}',
     '.tp-rush-status{color:var(--warn,#e0b552);font-size:0.74rem;font-weight:600;min-height:18px;margin:0 0 var(--s2);text-align:center;}',
+    '.tp-rush-best{color:var(--ink-dim);font-size:0.68rem;text-align:center;margin:0 0 var(--s2);}',
     '.tp-note{color:#666;font-size:0.68rem;text-align:center;margin-top:var(--s3);line-height:1.5;}'
   ].join('');
 
@@ -497,6 +498,7 @@
       '<div class="tp-boardwrap"><div class="tp-grid" id="tp-grid"></div></div>' +
       '<div class="tp-fb" id="tp-fb"></div>' +
       '<div class="tp-rush-status" id="tp-rush-status"></div>' +
+      '<div class="tp-rush-best" id="tp-rush-best"></div>' +
       '<div class="tp-tools">' +
       '<button class="cp-btn" id="tp-hint">힌트</button>' +
       '<button class="cp-btn" id="tp-retry">다시</button>' +
@@ -516,6 +518,7 @@
     document.getElementById('tp-next').onclick = function () { if (T.rush) nextTsumegoRush(); else nextProblem(); };
     document.getElementById('tp-rush-btn').onclick = function () { if (T.rush) endTsumegoRush(); else startTsumegoRush(); };
     document.getElementById('tp-exit').onclick = closeTsumego;
+    renderRushStatus();
     return wrap;
   }
 
@@ -556,6 +559,19 @@
     return list[0];
   }
 
+  /* WAVE56: 러시 최고점 로컬. 기존 RAW만. 가짜 문항 0. */
+  function rushBest() {
+    try { return Math.max(0, +localStorage.getItem('gc-tsumego-rush-best') || 0); }
+    catch (e) { return 0; }
+  }
+  function bumpRushBest(n) {
+    var b = rushBest();
+    if ((+n || 0) > b) {
+      try { localStorage.setItem('gc-tsumego-rush-best', String(+n || 0)); } catch (e) {}
+      return +n || 0;
+    }
+    return b;
+  }
   /* WAVE49: 사활 러시 3생명. 기존 RAW만. 가짜 문항 0. */
   function pickRushProblem() {
     var list = pool();
@@ -567,8 +583,11 @@
     return list[Math.floor(Math.random() * list.length)] || list[0];
   }
   function renderRushStatus() {
+    var best = rushBest();
     var el = document.getElementById('tp-rush-status');
-    if (el) el.textContent = T.rush ? ('러시 · 생명 ' + '♥'.repeat(Math.max(0, T.rush.lives)) + ' · 해결 ' + T.rush.solved) : '';
+    if (el) el.textContent = T.rush ? ('러시 · 생명 ' + '♥'.repeat(Math.max(0, T.rush.lives)) + ' · 해결 ' + T.rush.solved + ' · 최고 ' + best) : '';
+    var bestEl = document.getElementById('tp-rush-best');
+    if (bestEl) bestEl.textContent = '러시 최고 ' + best + '문제 · 로컬 RAW ' + RAW.length + ' · 가짜 사활 0';
     var btn = document.getElementById('tp-rush-btn');
     if (btn) btn.textContent = T.rush ? '러시 종료' : '사활 러시';
     var solve = document.getElementById('tp-solve');
@@ -589,9 +608,10 @@
   }
   function endTsumegoRush() {
     var solved = T.rush ? T.rush.solved : 0;
+    var best = bumpRushBest(solved);
     T.rush = null;
     renderRushStatus();
-    setFb('러시 종료 — ' + solved + '문제 해결. 로컬 RAW ' + RAW.length + '문항 · 가짜 사활 0.', 'ok');
+    setFb('러시 종료 — ' + solved + '문제 · 최고 ' + best + ' · 로컬 RAW ' + RAW.length + '문항 · 가짜 사활 0.', 'ok');
     try {
       if (typeof showShareBanner === 'function') showShareBanner('tsumego', { solved: solved }, '🔥 사활 러시 ' + solved + '문제');
     } catch (e) {}
