@@ -669,6 +669,7 @@
   function rushPrMoJumpId() { return 'tp-rush-btn'; }
   /* WAVE152: 점프 후 러시 플래시. 기존 RAW만. 가짜 문항 0. */
   /* WAVE161: 플래시 중 재탭=플래시즉끄기. 기존 RAW만. 가짜 문항 0. */
+  /* WAVE166: 플래시 끈 뒤 러시버튼 포커스. 기존 RAW만. 가짜 문항 0. */
   function rushFlashMs() { return 700; }
   function rushFlashOn(el) {
     el = el || (typeof document !== 'undefined' ? document.getElementById(rushPrMoJumpId()) : null);
@@ -678,6 +679,13 @@
     if (el.getAttribute && el.getAttribute('data-flash') === '1') return true;
     return false;
   }
+  function focusRushBtn() {
+    var el = typeof document !== 'undefined' ? document.getElementById(rushPrMoJumpId()) : null;
+    if (!el) return false;
+    try { if (el.focus) el.focus(); } catch (e1) {}
+    if (el.setAttribute) el.setAttribute('data-focus-after-kill', '1');
+    return true;
+  }
   function killRushFlash() {
     var el = typeof document !== 'undefined' ? document.getElementById(rushPrMoJumpId()) : null;
     if (!el) return false;
@@ -685,6 +693,7 @@
     el._flashT = 0;
     if (el.classList) el.classList.remove('rush-flash');
     if (el.setAttribute) el.setAttribute('data-flash', '0');
+    focusRushBtn();
     return true;
   }
   function flashRushAfterJump() {
