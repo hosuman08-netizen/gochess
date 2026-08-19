@@ -518,7 +518,10 @@
     document.getElementById('tp-retry').onclick = function () { loadProblem(T.prob); };
     document.getElementById('tp-solve').onclick = onSolve;
     document.getElementById('tp-next').onclick = function () { if (T.rush) nextTsumegoRush(); else nextProblem(); };
-    document.getElementById('tp-rush-btn').onclick = function () { if (T.rush) endTsumegoRush(); else startTsumegoRush(); };
+    document.getElementById('tp-rush-btn').onclick = function () {
+      killRushFlash();
+      if (T.rush) endTsumegoRush(); else startTsumegoRush();
+    };
     document.getElementById('tp-exit').onclick = closeTsumego;
     renderRushStatus();
     return wrap;
@@ -665,7 +668,25 @@
   /* WAVE140: 이번달 신기록일 점프. 탭 → #tp-rush-btn. 기존 RAW만. 가짜 문항 0. */
   function rushPrMoJumpId() { return 'tp-rush-btn'; }
   /* WAVE152: 점프 후 러시 플래시. 기존 RAW만. 가짜 문항 0. */
+  /* WAVE161: 플래시 중 재탭=플래시즉끄기. 기존 RAW만. 가짜 문항 0. */
   function rushFlashMs() { return 700; }
+  function rushFlashOn(el) {
+    el = el || (typeof document !== 'undefined' ? document.getElementById(rushPrMoJumpId()) : null);
+    if (!el) return false;
+    if (el._flashT) return true;
+    if (el.classList && el.classList.contains('rush-flash')) return true;
+    if (el.getAttribute && el.getAttribute('data-flash') === '1') return true;
+    return false;
+  }
+  function killRushFlash() {
+    var el = typeof document !== 'undefined' ? document.getElementById(rushPrMoJumpId()) : null;
+    if (!el) return false;
+    if (el._flashT) try { clearTimeout(el._flashT); } catch (e0) {}
+    el._flashT = 0;
+    if (el.classList) el.classList.remove('rush-flash');
+    if (el.setAttribute) el.setAttribute('data-flash', '0');
+    return true;
+  }
   function flashRushAfterJump() {
     var el = typeof document !== 'undefined' ? document.getElementById(rushPrMoJumpId()) : null;
     if (!el) return false;
@@ -688,11 +709,14 @@
     if (!on) return '';
     var id = rushPrMoJumpId();
     var el = typeof document !== 'undefined' ? document.getElementById(id) : null;
-    if (el) {
-      try { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) { try { el.scrollIntoView(); } catch (e2) {} }
-      flashRushAfterJump();
+    if (!el) return '';
+    if (rushFlashOn(el)) {
+      killRushFlash();
+      return id;
     }
-    return el ? id : '';
+    try { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) { try { el.scrollIntoView(); } catch (e2) {} }
+    flashRushAfterJump();
+    return id;
   }
   function bumpRushBest(n) {
     var b = rushBest();
