@@ -603,9 +603,23 @@
     try { return localStorage.getItem('gc-tsumego-rush-last-on') || ''; }
     catch (e) { return ''; }
   }
+  /* WAVE115: 신기록 횟수. 기존 RAW만. 가짜 문항 0. */
+  function rushPrN() {
+    try {
+      var stored = localStorage.getItem('gc-tsumego-rush-pr-n');
+      if (stored != null) return Math.max(0, +stored || 0);
+      return rushBest() > 0 ? 1 : 0;
+    } catch (e) { return 0; }
+  }
+  function bumpRushPrN() {
+    var n = rushPrN() + 1;
+    try { localStorage.setItem('gc-tsumego-rush-pr-n', String(n)); } catch (e) {}
+    return n;
+  }
   function bumpRushBest(n) {
     var b = rushBest();
     if ((+n || 0) > b) {
+      bumpRushPrN();
       try {
         localStorage.setItem('gc-tsumego-rush-best', String(+n || 0));
         localStorage.setItem('gc-tsumego-rush-best-on', rushDayKey());
@@ -656,6 +670,7 @@
         + ' · <span id="tp-rush-vs">' + vs + '</span>'
         + ' · <span id="tp-rush-pr">' + pr + '</span>'
         + ' · <span id="tp-rush-pr-on">' + prOn + '</span>'
+        + ' · <span id="tp-rush-pr-n">신기록 ' + rushPrN() + '회</span>'
         + ' · 로컬 RAW ' + RAW.length + ' · 가짜 사활 0';
     }
     var btn = document.getElementById('tp-rush-btn');
