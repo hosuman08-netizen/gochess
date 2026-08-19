@@ -633,11 +633,20 @@
       var on = rushBestOn();
       var last = rushLast();
       var lastOn = rushLastOn();
+      var lastN = last === '' ? null : Math.max(0, +last || 0);
+      var vs;
+      if (lastN === null) vs = '직전 vs 최고 —';
+      else {
+        var dlt = lastN - best;
+        vs = '직전 vs 최고 ' + lastN + '/' + best
+          + (dlt === 0 ? ' · 같음' : (dlt > 0 ? ' · +' + dlt : ' · ' + dlt));
+      }
       bestEl.innerHTML = '러시 최고 ' + best + '문제'
         + (on ? ' · <span id="tp-rush-best-on">최고일 ' + on + '</span>' : '<span id="tp-rush-best-on"></span>')
         + ' · <span id="tp-rush-n">시도 ' + rushTries() + '</span>'
         + ' · <span id="tp-rush-last">' + (last === '' ? '직전 —' : '직전 ' + last + '문제') + '</span>'
         + ' · <span id="tp-rush-last-on">' + (lastOn ? '직전일 ' + lastOn : '직전일 —') + '</span>'
+        + ' · <span id="tp-rush-vs">' + vs + '</span>'
         + ' · 로컬 RAW ' + RAW.length + ' · 가짜 사활 0';
     }
     var btn = document.getElementById('tp-rush-btn');
