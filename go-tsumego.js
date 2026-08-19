@@ -583,6 +583,18 @@
     try { localStorage.setItem('gc-tsumego-rush-n', String(n)); } catch (e) {}
     return n;
   }
+  /* WAVE72: 마지막 러시 점수 1줄. 종료 시 해결수. 기존 RAW만. 가짜 문항 0. */
+  function rushLast() {
+    try {
+      var v = localStorage.getItem('gc-tsumego-rush-last');
+      if (v == null) return '';
+      return String(Math.max(0, +v || 0));
+    } catch (e) { return ''; }
+  }
+  function setRushLast(n) {
+    try { localStorage.setItem('gc-tsumego-rush-last', String(+n || 0)); } catch (e) {}
+    return +n || 0;
+  }
   function bumpRushBest(n) {
     var b = rushBest();
     if ((+n || 0) > b) {
@@ -611,9 +623,11 @@
     var bestEl = document.getElementById('tp-rush-best');
     if (bestEl) {
       var on = rushBestOn();
+      var last = rushLast();
       bestEl.innerHTML = '러시 최고 ' + best + '문제'
         + (on ? ' · <span id="tp-rush-best-on">최고일 ' + on + '</span>' : '<span id="tp-rush-best-on"></span>')
         + ' · <span id="tp-rush-n">시도 ' + rushTries() + '</span>'
+        + ' · <span id="tp-rush-last">' + (last === '' ? '직전 —' : '직전 ' + last + '문제') + '</span>'
         + ' · 로컬 RAW ' + RAW.length + ' · 가짜 사활 0';
     }
     var btn = document.getElementById('tp-rush-btn');
@@ -637,6 +651,7 @@
   }
   function endTsumegoRush() {
     var solved = T.rush ? T.rush.solved : 0;
+    setRushLast(solved);
     var best = bumpRushBest(solved);
     T.rush = null;
     renderRushStatus();
