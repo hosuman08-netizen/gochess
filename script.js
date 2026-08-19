@@ -191,6 +191,7 @@ function hideNineOnramp() {
 function switchMode(mode) {
   if (typeof window.hideTsumego === 'function') window.hideTsumego(); // 사활 훈련소 UI 정리
   hideNineOnramp();
+  hideCourse();
   document.getElementById('go-board').classList.add('hidden');
   document.getElementById('chess-board').classList.add('hidden');
   document.getElementById('fusion-panel').classList.add('hidden');
@@ -256,6 +257,7 @@ function startNineOnramp() {
   document.getElementById('fusion-panel').classList.add('hidden');
   const study = document.getElementById('study-panel');
   if (study) study.classList.add('hidden');
+  hideCourse();
   const panel = document.getElementById('nine-panel');
   if (!panel) return;
   panel.classList.remove('hidden');
@@ -1569,6 +1571,7 @@ function crossLinkP3() {
 // --- Study / Learning Mode (ALWAYS LEARNING) - upgraded strong version + inline UI ---
 function showStudy(fromP4 = false) {
   if (typeof window.hideTsumego === 'function') window.hideTsumego();
+  hideCourse();
   const total = gameLog.length;
   const panel = document.getElementById('study-panel');
   const content = document.getElementById('study-content');
@@ -1887,6 +1890,178 @@ window.onload = () => {
     }, 400);
   } catch(e){}
 })();
+
+// GOLD50 TOP3 — MoveTrainer course tree. Real book lines only. No invented rules.
+var GC_COURSES = [
+  { id:'italian', kind:'chess', name:'이탈리안 게임', cite:'ECO C50', line:'1.e4 e5 2.Nf3 Nc6 3.Bc4',
+    steps:[
+      { before:'시작', ask:'백 1수', ok:'e4', opts:['e4','d4','c4'] },
+      { before:'1.e4', ask:'흑 오픈', ok:'e5', opts:['e5','c5','e6'] },
+      { before:'1.e4 e5', ask:'백 2수', ok:'Nf3', opts:['Nf3','f4','Nc3'] },
+      { before:'1.e4 e5 2.Nf3', ask:'흑 2수', ok:'Nc6', opts:['Nc6','Nf6','d6'] },
+      { before:'1.e4 e5 2.Nf3 Nc6', ask:'이탈리안', ok:'Bc4', opts:['Bc4','Bb5','d4'] }
+    ]},
+  { id:'qg', kind:'chess', name:'퀸스갬빗 (거절)', cite:'ECO D30', line:'1.d4 d5 2.c4 e6',
+    steps:[
+      { before:'시작', ask:'백 1수', ok:'d4', opts:['d4','e4','c4'] },
+      { before:'1.d4', ask:'흑 닫힌', ok:'d5', opts:['d5','Nf6','f5'] },
+      { before:'1.d4 d5', ask:'퀸스갬빗', ok:'c4', opts:['c4','Nf3','Bf4'] },
+      { before:'1.d4 d5 2.c4', ask:'거절', ok:'e6', opts:['e6','dxc4','c6'] }
+    ]},
+  { id:'sicilian', kind:'chess', name:'시실리안', cite:'ECO B50', line:'1.e4 c5 2.Nf3 d6 3.d4',
+    steps:[
+      { before:'시작', ask:'백 1수', ok:'e4', opts:['e4','d4','Nf3'] },
+      { before:'1.e4', ask:'시실리안', ok:'c5', opts:['c5','e5','c6'] },
+      { before:'1.e4 c5', ask:'백 2수', ok:'Nf3', opts:['Nf3','Nc3','c3'] },
+      { before:'1.e4 c5 2.Nf3', ask:'클래식', ok:'d6', opts:['d6','Nc6','e6'] },
+      { before:'1.e4 c5 2.Nf3 d6', ask:'오픈', ok:'d4', opts:['d4','Bb5+','c3'] }
+    ]},
+  { id:'hoshi', kind:'go', name:'4-4 고바리 계마', cite:"Sensei's Library · 4-4 high approach keima", line:'Q16 · R14 · R17',
+    steps:[
+      { before:'빈 판', ask:'흑 화점', ok:'Q16', opts:['Q16','Q15','D4'] },
+      { before:'흑 Q16', ask:'백 고바리', ok:'R14', opts:['R14','R17','C6'] },
+      { before:'Q16 R14', ask:'흑 계마', ok:'R17', opts:['R17','P17','Q17'] }
+    ]}
+];
+var gcCourse = { id:null, step:0 };
+
+function gcSrsLoad() {
+  try { return JSON.parse(localStorage.getItem('gc_course_srs') || '{}'); } catch (e) { return {}; }
+}
+function gcSrsSave(m) {
+  try { localStorage.setItem('gc_course_srs', JSON.stringify(m)); } catch (e) {}
+}
+function gcToday() {
+  var d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+function gcDue(id) {
+  var m = gcSrsLoad();
+  var rec = m[id];
+  if (!rec || !rec.due) return true;
+  return rec.due <= gcToday();
+}
+function gcAddDays(n) {
+  var d = new Date();
+  d.setDate(d.getDate() + n);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+function hideCourse() {
+  var p = document.getElementById('course-panel');
+  if (p) p.classList.add('hidden');
+}
+
+function showCourse() {
+  if (typeof window.hideTsumego === 'function') window.hideTsumego();
+  hideNineOnramp();
+  var ids = ['go-board', 'chess-board', 'fusion-panel', 'study-panel', 'nine-panel'];
+  for (var i = 0; i < ids.length; i++) {
+    var el = document.getElementById(ids[i]);
+    if (el) el.classList.add('hidden');
+  }
+  var p = document.getElementById('course-panel');
+  if (!p) return;
+  p.classList.remove('hidden');
+  currentMode = 'course';
+  gcCourse = { id:null, step:0 };
+  renderCourseTree();
+  var drill = document.getElementById('course-drill');
+  if (drill) { drill.classList.add('hidden'); drill.innerHTML = ''; }
+  updateStatus('코스 · 책수 복습 (로컬 SRS)');
+  try { if (window.legionTrack) legionTrack('course_open', {}); } catch (e) {}
+}
+
+function renderCourseTree() {
+  var host = document.getElementById('course-tree');
+  if (!host) return;
+  host.innerHTML = GC_COURSES.map(function (c) {
+    var due = gcDue(c.id);
+    return '<button type="button" class="course-card" data-cid="' + c.id + '">' +
+      '<b>' + c.name + (due ? '<span class="course-due">오늘</span>' : '') + '</b>' +
+      '<small>' + c.kind + ' · ' + c.line + ' · ' + c.cite + '</small></button>';
+  }).join('');
+  var cards = host.querySelectorAll('[data-cid]');
+  for (var i = 0; i < cards.length; i++) {
+    cards[i].onclick = function () { startCourse(this.getAttribute('data-cid')); };
+  }
+}
+
+function startCourse(id) {
+  var c = null;
+  for (var i = 0; i < GC_COURSES.length; i++) if (GC_COURSES[i].id === id) c = GC_COURSES[i];
+  if (!c) return;
+  gcCourse = { id: id, step: 0 };
+  renderCourseStep();
+  try { if (window.legionTrack) legionTrack('course_start', { id: id }); } catch (e) {}
+}
+
+function renderCourseStep() {
+  var c = null;
+  for (var i = 0; i < GC_COURSES.length; i++) if (GC_COURSES[i].id === gcCourse.id) c = GC_COURSES[i];
+  var drill = document.getElementById('course-drill');
+  if (!c || !drill) return;
+  drill.classList.remove('hidden');
+  if (gcCourse.step >= c.steps.length) {
+    drill.innerHTML = '<p class="course-line">' + c.line + '</p>' +
+      '<p class="course-cite">책수 끝 · ' + c.cite + ' · 새 룰 없음</p>' +
+      '<p class="course-ask">다음에 언제 볼까</p>' +
+      '<div class="course-srs">' +
+      '<button type="button" data-iv="0">다시</button>' +
+      '<button type="button" class="primary" data-iv="1">좋음 +1일</button>' +
+      '<button type="button" data-iv="3">쉬움 +3일</button></div>';
+    var srsBtns = drill.querySelectorAll('[data-iv]');
+    for (var j = 0; j < srsBtns.length; j++) {
+      srsBtns[j].onclick = function () { gradeCourse(+this.getAttribute('data-iv')); };
+    }
+    return;
+  }
+  var st = c.steps[gcCourse.step];
+  drill.innerHTML = '<p class="course-cite">' + c.name + ' · ' + (gcCourse.step + 1) + '/' + c.steps.length + ' · ' + c.cite + '</p>' +
+    '<p class="course-line">' + st.before + '</p>' +
+    '<p class="course-ask">' + st.ask + ' — 책수만</p>' +
+    '<div class="course-opts">' + st.opts.map(function (m) {
+      return '<button type="button" data-mv="' + m + '">' + m + '</button>';
+    }).join('') + '</div>';
+  var opts = drill.querySelectorAll('[data-mv]');
+  for (var k = 0; k < opts.length; k++) {
+    opts[k].onclick = function () { pickCourseMove(this, c, st); };
+  }
+}
+
+function pickCourseMove(btn, c, st) {
+  var mv = btn.getAttribute('data-mv');
+  var wrap = btn.parentNode;
+  if (!wrap || wrap.getAttribute('data-locked')) return;
+  if (mv === st.ok) {
+    btn.classList.add('ok');
+    wrap.setAttribute('data-locked', '1');
+    gcCourse.step += 1;
+    setTimeout(renderCourseStep, 280);
+  } else {
+    btn.classList.add('bad');
+    var all = wrap.querySelectorAll('[data-mv]');
+    for (var i = 0; i < all.length; i++) {
+      if (all[i].getAttribute('data-mv') === st.ok) all[i].classList.add('ok');
+    }
+    wrap.setAttribute('data-locked', '1');
+    setTimeout(function () {
+      wrap.removeAttribute('data-locked');
+      renderCourseStep();
+    }, 700);
+  }
+}
+
+function gradeCourse(days) {
+  var m = gcSrsLoad();
+  m[gcCourse.id] = { due: gcAddDays(days), last: gcToday() };
+  gcSrsSave(m);
+  try { if (window.legionTrack) legionTrack('course_grade', { id: gcCourse.id, d: days }); } catch (e) {}
+  gcCourse = { id:null, step:0 };
+  var drill = document.getElementById('course-drill');
+  if (drill) { drill.classList.add('hidden'); drill.innerHTML = ''; }
+  renderCourseTree();
+}
 
 // GG daily board FOMO
 (function(){try{

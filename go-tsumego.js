@@ -569,7 +569,7 @@
       var ctr = host.querySelector('.controls'); if (ctr) ctr.style.display = 'none';
     }
     // 다른 섹션 숨김
-    ['chess-board', 'fusion-panel', 'study-panel', 'nine-panel'].forEach(function (id) { var e = document.getElementById(id); if (e) e.classList.add('hidden'); });
+    ['chess-board', 'fusion-panel', 'study-panel', 'nine-panel', 'course-panel'].forEach(function (id) { var e = document.getElementById(id); if (e) e.classList.add('hidden'); });
     var wrap = document.getElementById('tp-wrap'); if (wrap) wrap.classList.remove('hidden');
     if (!T.prob) nextProblem(); else loadProblem(T.prob);
     try { if (window.legionTrack) window.legionTrack('daily_focus', { mode: 'tsumego' }); } catch (e) {}

@@ -37,6 +37,7 @@
         <button class="primary" onclick="switchMode('chess')">체스</button>
         <button class="primary" onclick="switchMode('fusion')">퓨전 모드</button>
         <button class="util" onclick="showStudy()">공부 모드</button>
+        <button class="util" onclick="showCourse()">코스</button>
         <button class="util" onclick="startTsumego()">사활 문제</button>
         <button class="util" onclick="startDailyPuzzle()">퍼즐 훈련소</button>
         <button class="util" onclick="crossLinkP3()">전략 코치</button>
@@ -99,6 +100,17 @@
       <button onclick="playFusionMove()">퓨전 수 두기 (교차 버프)</button>
       <button onclick="showStudyP4()">공부 모드</button>
       <button onclick="endGameAndStudy()">게임 종료 + 복기 분석</button>
+    </div>
+
+    <!-- GOLD50 TOP3: MoveTrainer course tree — real book lines only -->
+    <div id="course-panel" class="board-section hidden">
+      <h2>코스 · 간격반복</h2>
+      <p class="nine-hint">Chessable형 클릭 복습. 이탈리안·퀸스갬빗·시실리안·4-4 고바리만. 새 룰 없음.</p>
+      <div id="course-tree" class="course-tree"></div>
+      <div id="course-drill" class="course-drill hidden"></div>
+      <div class="controls">
+        <button type="button" onclick="hideCourse()">닫기</button>
+      </div>
     </div>
 
     <!-- Study Mode UI (inline) -->

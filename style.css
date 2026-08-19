@@ -35,6 +35,30 @@ body {
   padding: var(--s6) var(--s5);
 }
 
+.course-tree { display: flex; flex-direction: column; gap: var(--s2); margin: 0 0 var(--s4); }
+.course-card {
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: var(--s3) var(--s4);
+  cursor: pointer;
+  color: var(--ink);
+}
+.course-card:hover { border-color: var(--accent); background: var(--accent-soft); }
+.course-card b { display: block; font-size: 0.95rem; }
+.course-card small { color: var(--ink-dim); font-size: 0.75rem; }
+.course-due { color: var(--accent); font-size: 0.72rem; margin-left: var(--s2); }
+.course-drill { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: var(--s4); margin: 0 0 var(--s3); }
+.course-line { font-family: ui-monospace, Menlo, monospace; font-size: 1.05rem; margin: 0 0 var(--s3); }
+.course-ask { color: var(--ink-dim); font-size: 0.85rem; margin: 0 0 var(--s3); }
+.course-opts { display: flex; flex-wrap: wrap; gap: var(--s2); }
+.course-opts button { min-width: 72px; }
+.course-opts button.ok { border-color: #3d9a6a; background: #1a3a2a; }
+.course-opts button.bad { border-color: #9a4a3d; background: #3a1a18; }
+.course-srs { display: flex; flex-wrap: wrap; gap: var(--s2); margin-top: var(--s3); }
+.course-cite { font-size: 0.72rem; color: var(--ink-dim); margin: 0 0 var(--s2); }
+
 .nine-hint {
   color: var(--ink-dim);
   font-size: 13px;
