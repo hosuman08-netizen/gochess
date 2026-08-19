@@ -660,6 +660,18 @@
       return '';
     } catch (e) { return ''; }
   }
+  /* WAVE140: 이번달 신기록일 점프. 탭 → #tp-rush-btn. 기존 RAW만. 가짜 문항 0. */
+  function rushPrMoJumpId() { return 'tp-rush-btn'; }
+  function jumpRushPrMoOn() {
+    var on = rushPrMoOn();
+    if (!on) return '';
+    var id = rushPrMoJumpId();
+    var el = typeof document !== 'undefined' ? document.getElementById(id) : null;
+    if (el) {
+      try { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) { try { el.scrollIntoView(); } catch (e2) {} }
+    }
+    return el ? id : '';
+  }
   function bumpRushBest(n) {
     var b = rushBest();
     if ((+n || 0) > b) {
@@ -707,6 +719,7 @@
       var prOn;
       if (lastN !== null && lastN > 0 && lastN === best && lastOn && lastOn === on) prOn = '신기록일 ' + lastOn;
       else prOn = '신기록일 —';
+      var moOnDate = rushPrMoOn();
       bestEl.innerHTML = '러시 최고 ' + best + '문제'
         + (on ? ' · <span id="tp-rush-best-on">최고일 ' + on + '</span>' : '<span id="tp-rush-best-on"></span>')
         + ' · <span id="tp-rush-n">시도 ' + rushTries() + '</span>'
@@ -717,8 +730,10 @@
         + ' · <span id="tp-rush-pr-on">' + prOn + '</span>'
         + ' · <span id="tp-rush-pr-n">신기록 ' + rushPrN() + '회</span>'
         + ' · <span id="tp-rush-pr-mo">이번달 신기록 ' + rushPrMo() + '회</span>'
-        + ' · <span id="tp-rush-pr-mo-on">' + (rushPrMoOn() ? '이번달 신기록일 ' + rushPrMoOn() : '이번달 신기록일 —') + '</span>'
+        + ' · <span id="tp-rush-pr-mo-on"' + (moOnDate ? ' role="button" tabindex="0" style="cursor:pointer" title="탭=러시 점프"' : '') + '>' + (moOnDate ? '이번달 신기록일 ' + moOnDate : '이번달 신기록일 —') + '</span>'
         + ' · 로컬 RAW ' + RAW.length + ' · 가짜 사활 0';
+      var moOnEl = document.getElementById('tp-rush-pr-mo-on');
+      if (moOnEl && moOnDate) moOnEl.onclick = function () { jumpRushPrMoOn(); };
     }
     var btn = document.getElementById('tp-rush-btn');
     if (btn) btn.textContent = T.rush ? '러시 종료' : '사활 러시';
