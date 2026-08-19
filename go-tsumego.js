@@ -423,6 +423,7 @@
     '.tp-rush-best{color:var(--ink-dim);font-size:0.68rem;text-align:center;margin:0 0 var(--s2);}',
     '#tp-rush-btn.rush-flash{animation:rushFlash .7s ease-out;outline:2px solid var(--accent,#67e8f9);}',
     '@keyframes rushFlash{0%{box-shadow:0 0 0 3px var(--accent,#67e8f9)}100%{box-shadow:0 0 0 0 transparent}}',
+    '#tp-rush-btn.rush-focus-ring{outline:2px solid var(--accent,#67e8f9);outline-offset:2px;box-shadow:0 0 0 4px rgba(103,232,249,.35);}',
     '.tp-note{color:#666;font-size:0.68rem;text-align:center;margin-top:var(--s3);line-height:1.5;}'
   ].join('');
 
@@ -670,6 +671,7 @@
   /* WAVE152: 점프 후 러시 플래시. 기존 RAW만. 가짜 문항 0. */
   /* WAVE161: 플래시 중 재탭=플래시즉끄기. 기존 RAW만. 가짜 문항 0. */
   /* WAVE166: 플래시 끈 뒤 러시버튼 포커스. 기존 RAW만. 가짜 문항 0. */
+  /* WAVE170: 포커스 링. 기존 RAW만. 가짜 문항 0. */
   function rushFlashMs() { return 700; }
   function rushFlashOn(el) {
     el = el || (typeof document !== 'undefined' ? document.getElementById(rushPrMoJumpId()) : null);
@@ -679,11 +681,30 @@
     if (el.getAttribute && el.getAttribute('data-flash') === '1') return true;
     return false;
   }
+  function rushFocusRingMs() { return 400; }
+  function armRushFocusRing() {
+    var el = typeof document !== 'undefined' ? document.getElementById(rushPrMoJumpId()) : null;
+    if (!el) return false;
+    if (el.classList) {
+      el.classList.remove('rush-focus-ring');
+      void el.offsetWidth;
+      el.classList.add('rush-focus-ring');
+    }
+    if (el.setAttribute) el.setAttribute('data-focus-ring', '1');
+    if (el._ringT) try { clearTimeout(el._ringT); } catch (e0) {}
+    el._ringT = setTimeout(function () {
+      if (el.classList) el.classList.remove('rush-focus-ring');
+      if (el.setAttribute) el.setAttribute('data-focus-ring', '0');
+      el._ringT = 0;
+    }, rushFocusRingMs());
+    return true;
+  }
   function focusRushBtn() {
     var el = typeof document !== 'undefined' ? document.getElementById(rushPrMoJumpId()) : null;
     if (!el) return false;
     try { if (el.focus) el.focus(); } catch (e1) {}
     if (el.setAttribute) el.setAttribute('data-focus-after-kill', '1');
+    armRushFocusRing();
     return true;
   }
   function killRushFlash() {
