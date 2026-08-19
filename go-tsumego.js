@@ -592,8 +592,16 @@
     } catch (e) { return ''; }
   }
   function setRushLast(n) {
-    try { localStorage.setItem('gc-tsumego-rush-last', String(+n || 0)); } catch (e) {}
+    try {
+      localStorage.setItem('gc-tsumego-rush-last', String(+n || 0));
+      localStorage.setItem('gc-tsumego-rush-last-on', rushDayKey());
+    } catch (e) {}
     return +n || 0;
+  }
+  /* WAVE84: 직전 러시 일 1줄. 종료일 로컬. 기존 RAW만. 가짜 문항 0. */
+  function rushLastOn() {
+    try { return localStorage.getItem('gc-tsumego-rush-last-on') || ''; }
+    catch (e) { return ''; }
   }
   function bumpRushBest(n) {
     var b = rushBest();
@@ -624,10 +632,12 @@
     if (bestEl) {
       var on = rushBestOn();
       var last = rushLast();
+      var lastOn = rushLastOn();
       bestEl.innerHTML = '러시 최고 ' + best + '문제'
         + (on ? ' · <span id="tp-rush-best-on">최고일 ' + on + '</span>' : '<span id="tp-rush-best-on"></span>')
         + ' · <span id="tp-rush-n">시도 ' + rushTries() + '</span>'
         + ' · <span id="tp-rush-last">' + (last === '' ? '직전 —' : '직전 ' + last + '문제') + '</span>'
+        + ' · <span id="tp-rush-last-on">' + (lastOn ? '직전일 ' + lastOn : '직전일 —') + '</span>'
         + ' · 로컬 RAW ' + RAW.length + ' · 가짜 사활 0';
     }
     var btn = document.getElementById('tp-rush-btn');
