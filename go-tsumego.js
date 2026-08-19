@@ -616,10 +616,39 @@
     try { localStorage.setItem('gc-tsumego-rush-pr-n', String(n)); } catch (e) {}
     return n;
   }
+  /* WAVE122: 이번달 신기록만. YYYY-MM 키. 기존 RAW만. 가짜 문항 0. */
+  function rushMonthKey() {
+    var d = new Date();
+    var m = d.getMonth() + 1;
+    return d.getFullYear() + '-' + (m < 10 ? '0' : '') + m;
+  }
+  function rushPrMo() {
+    try {
+      var now = rushMonthKey();
+      var key = localStorage.getItem('gc-tsumego-rush-pr-mo-key');
+      var stored = localStorage.getItem('gc-tsumego-rush-pr-mo');
+      if (key && key !== now) return 0;
+      if (stored != null && key === now) return Math.max(0, +stored || 0);
+      if (rushBest() > 0) {
+        var on = rushBestOn();
+        return (on && on.slice(0, 7) === now) ? 1 : 0;
+      }
+      return 0;
+    } catch (e) { return 0; }
+  }
+  function bumpRushPrMo() {
+    var n = rushPrMo() + 1;
+    try {
+      localStorage.setItem('gc-tsumego-rush-pr-mo', String(n));
+      localStorage.setItem('gc-tsumego-rush-pr-mo-key', rushMonthKey());
+    } catch (e) {}
+    return n;
+  }
   function bumpRushBest(n) {
     var b = rushBest();
     if ((+n || 0) > b) {
       bumpRushPrN();
+      bumpRushPrMo();
       try {
         localStorage.setItem('gc-tsumego-rush-best', String(+n || 0));
         localStorage.setItem('gc-tsumego-rush-best-on', rushDayKey());
@@ -671,6 +700,7 @@
         + ' · <span id="tp-rush-pr">' + pr + '</span>'
         + ' · <span id="tp-rush-pr-on">' + prOn + '</span>'
         + ' · <span id="tp-rush-pr-n">신기록 ' + rushPrN() + '회</span>'
+        + ' · <span id="tp-rush-pr-mo">이번달 신기록 ' + rushPrMo() + '회</span>'
         + ' · 로컬 RAW ' + RAW.length + ' · 가짜 사활 0';
     }
     var btn = document.getElementById('tp-rush-btn');
