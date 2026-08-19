@@ -673,6 +673,7 @@
   /* WAVE166: 플래시 끈 뒤 러시버튼 포커스. 기존 RAW만. 가짜 문항 0. */
   /* WAVE170: 포커스 링. 기존 RAW만. 가짜 문항 0. */
   /* WAVE174: 링 중 재탭=링 재시작. 기존 RAW만. 가짜 문항 0. */
+  /* WAVE180: 링 탭=링 끄기. 기존 RAW만. 가짜 문항 0. */
   function rushFlashMs() { return 700; }
   function rushFlashOn(el) {
     el = el || (typeof document !== 'undefined' ? document.getElementById(rushPrMoJumpId()) : null);
@@ -713,6 +714,20 @@
       }
       el._ringT = 0;
     }, rushFocusRingMs());
+    return true;
+  }
+  function killRushFocusRing() {
+    var el = typeof document !== 'undefined' ? document.getElementById(rushPrMoJumpId()) : null;
+    if (!el) return false;
+    if (el._ringT) try { clearTimeout(el._ringT); } catch (e0) {}
+    el._ringT = 0;
+    if (el.classList) el.classList.remove('rush-focus-ring');
+    if (el.setAttribute) {
+      el.setAttribute('data-focus-ring', '0');
+      el.setAttribute('data-re-ring', '0');
+      el.setAttribute('data-ring-off', '1');
+      el.setAttribute('data-ring-tap', '1');
+    }
     return true;
   }
   function focusRushBtn() {
@@ -761,7 +776,7 @@
       return id;
     }
     if (rushFocusRingOn(el)) {
-      armRushFocusRing();
+      killRushFocusRing();
       return id;
     }
     try { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) { try { el.scrollIntoView(); } catch (e2) {} }
