@@ -419,6 +419,7 @@
     '.tp-solved{color:#7fd88f;font-size:0.74rem;}',
     '.tp-elo{color:var(--ink-dim);font-size:0.72rem;margin:0 0 var(--s2);}',
     '.tp-elo b{color:var(--accent);}',
+    '.tp-rush-status{color:var(--warn,#e0b552);font-size:0.74rem;font-weight:600;min-height:18px;margin:0 0 var(--s2);text-align:center;}',
     '.tp-note{color:#666;font-size:0.68rem;text-align:center;margin-top:var(--s3);line-height:1.5;}'
   ].join('');
 
@@ -435,7 +436,7 @@
     { id: 'mid', t: '중급' },
     { id: 'hard', t: '상급 ≥1000' }
   ];
-  var T = { theme: '전체', band: 'all', rated: false, prob: null, board: null, N: 0, target: null, depth: 6, busy: false, done: false, lastMove: null };
+  var T = { theme: '전체', band: 'all', rated: false, prob: null, board: null, N: 0, target: null, depth: 6, busy: false, done: false, lastMove: null, rush: null };
 
   /* WAVE43: 사활 Elo 밴드. 기존 RAW만. 가짜 문항 0. 이 기기 Elo. */
   function tsumegoElo() {
@@ -495,11 +496,13 @@
       '<div class="tp-tip" id="tp-tip"></div>' +
       '<div class="tp-boardwrap"><div class="tp-grid" id="tp-grid"></div></div>' +
       '<div class="tp-fb" id="tp-fb"></div>' +
+      '<div class="tp-rush-status" id="tp-rush-status"></div>' +
       '<div class="tp-tools">' +
       '<button class="cp-btn" id="tp-hint">힌트</button>' +
       '<button class="cp-btn" id="tp-retry">다시</button>' +
       '<button class="cp-btn" id="tp-solve">정답 보기</button>' +
       '<button class="cp-btn cp-accent" id="tp-next">다음 문제</button>' +
+      '<button class="cp-btn cp-accent" id="tp-rush-btn">사활 러시</button>' +
       '<button class="cp-btn" id="tp-exit">닫기</button>' +
       '</div>' +
       '<div class="tp-note">흑을 두어 표시된 백 대상을 잡으세요. 로컬 문항은 Sensei 첫포획 고전만 · 가짜 사활 0. 상대 응수·정답은 내장 사활 엔진이 계산합니다. · 가상 학습 시뮬레이션.</div>';
@@ -510,7 +513,8 @@
     document.getElementById('tp-hint').onclick = onHint;
     document.getElementById('tp-retry').onclick = function () { loadProblem(T.prob); };
     document.getElementById('tp-solve').onclick = onSolve;
-    document.getElementById('tp-next').onclick = nextProblem;
+    document.getElementById('tp-next').onclick = function () { if (T.rush) nextTsumegoRush(); else nextProblem(); };
+    document.getElementById('tp-rush-btn').onclick = function () { if (T.rush) endTsumegoRush(); else startTsumegoRush(); };
     document.getElementById('tp-exit').onclick = closeTsumego;
     return wrap;
   }
@@ -550,6 +554,47 @@
     var solved = solvedSet();
     for (var i = 0; i < list.length; i++) if (solved.indexOf(list[i].id) < 0) return list[i];
     return list[0];
+  }
+
+  /* WAVE49: 사활 러시 3생명. 기존 RAW만. 가짜 문항 0. */
+  function pickRushProblem() {
+    var list = pool();
+    if (!list.length) { T.theme = '전체'; T.band = 'all'; renderChips(); list = pool(); }
+    if (T.prob && list.length > 1) {
+      var rest = list.filter(function (p) { return p.id !== T.prob.id; });
+      if (rest.length) list = rest;
+    }
+    return list[Math.floor(Math.random() * list.length)] || list[0];
+  }
+  function renderRushStatus() {
+    var el = document.getElementById('tp-rush-status');
+    if (el) el.textContent = T.rush ? ('러시 · 생명 ' + '♥'.repeat(Math.max(0, T.rush.lives)) + ' · 해결 ' + T.rush.solved) : '';
+    var btn = document.getElementById('tp-rush-btn');
+    if (btn) btn.textContent = T.rush ? '러시 종료' : '사활 러시';
+    var solve = document.getElementById('tp-solve');
+    if (solve) solve.disabled = !!T.rush;
+  }
+  function startTsumegoRush() {
+    T.rush = { lives: 3, solved: 0 };
+    T.theme = '전체';
+    renderChips();
+    renderRushStatus();
+    loadProblem(pickRushProblem());
+    try { if (window.legionTrack) legionTrack('activate', { mode: 'tsumego-rush' }); } catch (e) {}
+  }
+  function nextTsumegoRush() {
+    if (!T.rush) return;
+    loadProblem(pickRushProblem());
+    renderRushStatus();
+  }
+  function endTsumegoRush() {
+    var solved = T.rush ? T.rush.solved : 0;
+    T.rush = null;
+    renderRushStatus();
+    setFb('러시 종료 — ' + solved + '문제 해결. 로컬 RAW ' + RAW.length + '문항 · 가짜 사활 0.', 'ok');
+    try {
+      if (typeof showShareBanner === 'function') showShareBanner('tsumego', { solved: solved }, '🔥 사활 러시 ' + solved + '문제');
+    } catch (e) {}
   }
 
   function nextProblem() {
@@ -634,6 +679,12 @@
       renderChips();
       setFb('아쉽네요 — 이 수로는 백이 살아요. [다시]로 재도전하거나 [정답 보기].', 'bad');
       T.done = true;
+      if (T.rush) {
+        T.rush.lives--;
+        renderRushStatus();
+        if (T.rush.lives <= 0) { setTimeout(endTsumegoRush, 700); return; }
+        setTimeout(function () { if (T.rush) loadProblem(pickRushProblem()); }, 600);
+      }
       return;
     }
     // 정답수 — 최선의 수비 응수를 solver가 고름
@@ -660,6 +711,12 @@
     if (!T.rated) { T.rated = true; bumpTsumegoElo(true, T.prob.rating); }
     clearWrong(T.prob.id); markSolved(T.prob.id); renderChips();
     setFb('🎉 정답! 백 대상을 잡았습니다 — ' + T.prob.name, 'ok');
+    if (T.rush) {
+      T.rush.solved++;
+      renderRushStatus();
+      setTimeout(function () { if (T.rush) loadProblem(pickRushProblem()); }, 750);
+      return;
+    }
     try { if (window.legionTrack) window.legionTrack('activate'); } catch (e) {}
     try {
       if (typeof showShareBanner === 'function' && !win._shared) {
@@ -699,6 +756,7 @@
   }
 
   function onSolve() {
+    if (T.rush) { setFb('러시 중엔 정답 보기가 꺼집니다.', 'go'); return; }
     // 정답 라인을 solver로 자동 재생(흑 정답수 → 백 최선 → …)
     loadProblem(T.prob); // 초기화
     T.busy = true; T.done = true;
@@ -742,6 +800,7 @@
   // go-board 자체도 숨겨(다른 패널로 깔끔히 이동). switchMode의 go 진입은
   // 이 함수 뒤에 go-board를 다시 보이므로 안전하다.
   function hideTsumego() {
+    T.rush = null;
     var wrap = document.getElementById('tp-wrap');
     var wasActive = wrap && !wrap.classList.contains('hidden');
     if (wrap) wrap.classList.add('hidden');
