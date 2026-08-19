@@ -573,6 +573,16 @@
     try { return localStorage.getItem('gc-tsumego-rush-best-on') || ''; }
     catch (e) { return ''; }
   }
+  /* WAVE67: 러시 시도횟수 로컬. 시작 1회 +1. 기존 RAW만. 가짜 문항 0. */
+  function rushTries() {
+    try { return Math.max(0, +localStorage.getItem('gc-tsumego-rush-n') || 0); }
+    catch (e) { return 0; }
+  }
+  function bumpRushTries() {
+    var n = rushTries() + 1;
+    try { localStorage.setItem('gc-tsumego-rush-n', String(n)); } catch (e) {}
+    return n;
+  }
   function bumpRushBest(n) {
     var b = rushBest();
     if ((+n || 0) > b) {
@@ -603,6 +613,7 @@
       var on = rushBestOn();
       bestEl.innerHTML = '러시 최고 ' + best + '문제'
         + (on ? ' · <span id="tp-rush-best-on">최고일 ' + on + '</span>' : '<span id="tp-rush-best-on"></span>')
+        + ' · <span id="tp-rush-n">시도 ' + rushTries() + '</span>'
         + ' · 로컬 RAW ' + RAW.length + ' · 가짜 사활 0';
     }
     var btn = document.getElementById('tp-rush-btn');
@@ -612,6 +623,7 @@
   }
   function startTsumegoRush() {
     T.rush = { lives: 3, solved: 0 };
+    bumpRushTries();
     T.theme = '전체';
     renderChips();
     renderRushStatus();
