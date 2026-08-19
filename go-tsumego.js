@@ -675,6 +675,7 @@
   /* WAVE174: 링 중 재탭=링 재시작. 기존 RAW만. 가짜 문항 0. */
   /* WAVE180: 링 탭=링 끄기. 기존 RAW만. 가짜 문항 0. */
   /* WAVE186: 끈 뒤 러시 포커스 유지. 기존 RAW만. 가짜 문항 0. */
+  /* WAVE187: 포커스 링 재탭=재시작 분리. 기존 RAW만. 가짜 문항 0. */
   function rushFlashMs() { return 700; }
   function rushFlashOn(el) {
     el = el || (typeof document !== 'undefined' ? document.getElementById(rushPrMoJumpId()) : null);
@@ -723,6 +724,16 @@
     try { if (!el.hasAttribute || !el.hasAttribute('tabindex')) el.setAttribute('tabindex', '-1'); } catch (e0) {}
     try { if (el.focus) el.focus(); } catch (e1) {}
     if (el.setAttribute) el.setAttribute('data-focus-after-kill', '1');
+    return true;
+  }
+  function restartRushRingFromFocus() {
+    var el = typeof document !== 'undefined' ? document.getElementById(rushPrMoJumpId()) : null;
+    if (!el || !el.getAttribute || el.getAttribute('data-focus-after-kill') !== '1') return false;
+    armRushFocusRing();
+    if (el.setAttribute) {
+      el.setAttribute('data-re-ring', '1');
+      el.setAttribute('data-re-from-focus', '1');
+    }
     return true;
   }
   function killRushFocusRing() {
@@ -787,6 +798,10 @@
     }
     if (rushFocusRingOn(el)) {
       killRushFocusRing();
+      return id;
+    }
+    if (el.getAttribute && el.getAttribute('data-focus-after-kill') === '1') {
+      restartRushRingFromFocus();
       return id;
     }
     try { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) { try { el.scrollIntoView(); } catch (e2) {} }
