@@ -674,6 +674,7 @@
   /* WAVE170: 포커스 링. 기존 RAW만. 가짜 문항 0. */
   /* WAVE174: 링 중 재탭=링 재시작. 기존 RAW만. 가짜 문항 0. */
   /* WAVE180: 링 탭=링 끄기. 기존 RAW만. 가짜 문항 0. */
+  /* WAVE186: 끈 뒤 러시 포커스 유지. 기존 RAW만. 가짜 문항 0. */
   function rushFlashMs() { return 700; }
   function rushFlashOn(el) {
     el = el || (typeof document !== 'undefined' ? document.getElementById(rushPrMoJumpId()) : null);
@@ -716,6 +717,14 @@
     }, rushFocusRingMs());
     return true;
   }
+  function holdRushFocus() {
+    var el = typeof document !== 'undefined' ? document.getElementById(rushPrMoJumpId()) : null;
+    if (!el) return false;
+    try { if (!el.hasAttribute || !el.hasAttribute('tabindex')) el.setAttribute('tabindex', '-1'); } catch (e0) {}
+    try { if (el.focus) el.focus(); } catch (e1) {}
+    if (el.setAttribute) el.setAttribute('data-focus-after-kill', '1');
+    return true;
+  }
   function killRushFocusRing() {
     var el = typeof document !== 'undefined' ? document.getElementById(rushPrMoJumpId()) : null;
     if (!el) return false;
@@ -728,6 +737,7 @@
       el.setAttribute('data-ring-off', '1');
       el.setAttribute('data-ring-tap', '1');
     }
+    holdRushFocus();
     return true;
   }
   function focusRushBtn() {
